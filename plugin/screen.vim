@@ -104,7 +104,7 @@
 " }}}
 
 " not compatible with gvim
-if has('gui') || !executable('screen')
+if has('gui_running') || !executable('screen')
   finish
 endif
 
@@ -112,7 +112,7 @@ endif
 
   " Sets the height of the gnu screen window used for the shell.
   if !exists('g:ScreenShellHeight')
-    let g:ScreenShellHeight = 10
+    let g:ScreenShellHeight = 15
   endif
 
   " Specifies whether or not to quit gnu screen when vim is closed and the
@@ -127,10 +127,6 @@ endif
 
   if !exists(':ScreenShell')
     command -nargs=? ScreenShell :call <SID>ScreenShell('<args>')
-  endif
-
-  if expand('$TERM') == 'screen' && !exists(':ScreenSend')
-    command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
   endif
 
 " }}}
@@ -165,12 +161,17 @@ function! s:ScreenShell(cmd)
       endif
     endif
 
+    if !exists(':ScreenSend')
+      command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+    endif
+
     exec 'silent! !screen -X eval ' .
       \ '"split" ' .
       \ '"focus down" ' .
       \ '"resize ' . g:ScreenShellHeight . '" ' .
       \ '"chdir ' . cwd . '" ' .
-      \ '"screen -t shell"'
+      \ '"screen -t shell" ' .
+      \ '"chdir"'
 
     if a:cmd != ''
       let cmd = a:cmd . ""
