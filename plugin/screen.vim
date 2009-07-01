@@ -187,6 +187,16 @@ function! s:ScreenShell(cmd)
       let sessionfile = tempname()
       exec 'mksession ' . sessionfile
 
+      " support for taglist
+      if exists(':TlistSessionSave') &&
+       \ exists('g:TagList_title') &&
+       \ bufwinnr(g:TagList_title)
+        let g:ScreenShellTaglistSession = sessionfile . '.taglist'
+        exec 'TlistSessionSave ' . g:ScreenShellTaglistSession
+        exec 'silent! !echo "Tlist | TlistSessionLoad ' .
+          \ g:ScreenShellTaglistSession . '" >> "' . sessionfile . '"'
+      endif
+
       let bufend = bufnr('$')
       let bufnum = 1
       while bufnum <= bufend
@@ -204,6 +214,12 @@ function! s:ScreenShell(cmd)
       unlet g:ScreenShell
       let &sessionoptions = save_sessionoptions
       call delete(sessionfile)
+
+      " remove taglist session file
+      if exists('g:ScreenShellTaglistSession')
+        call delete(g:ScreenShellTaglistSession)
+      endif
+
       exec "normal! \<c-l>"
 
       let bufnum = 1
