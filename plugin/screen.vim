@@ -265,15 +265,15 @@ endfunction " }}}
 function! s:ScreenQuit(onleave)
   if !a:onleave
     wa
-    let bufend = bufnr('$')
-    let bufnum = 1
-    while bufnum <= bufend
-      if bufnr(bufnum) != -1
-        call setbufvar(bufnum, '&swapfile', 0)
-      endif
-      let bufnum = bufnum + 1
-    endwhile
   endif
+  let bufend = bufnr('$')
+  let bufnum = 1
+  while bufnum <= bufend
+    if bufnr(bufnum) != -1
+      call setbufvar(bufnum, '&swapfile', 0)
+    endif
+    let bufnum = bufnum + 1
+  endwhile
   silent! !screen -X quit
 endfunction " }}}
 
