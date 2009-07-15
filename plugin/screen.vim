@@ -1,4 +1,4 @@
-" Author: Eric Van Dewoestine
+" Author: Eric Van Dewoestine <ervandew@gmail.com>
 " Version: 0.1
 "
 " Description: {{{
@@ -37,7 +37,7 @@
 "       Note: :ScreenQuit is not available if you where already in a gnu
 "             screen session when you ran :ScreenShell.
 "       Note: By default, if the gnu screen session was started by
-"             :ScreenShell, then existing vim will quit the gnu screen session
+"             :ScreenShell, then exiting vim will quit the gnu screen session
 "             as well (configurable via g:ScreenShellQuitOnVimExit).
 "
 "   An example workflow may be:
