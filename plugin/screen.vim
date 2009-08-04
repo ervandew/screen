@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.1
+" Version: 0.2
 "
 " Description: {{{
 "   Note: gvim is not supported. You must be running vim in a console.
@@ -174,7 +174,7 @@ function! s:ScreenShell(cmd)
       \ '"chdir"'
 
     if a:cmd != ''
-      let cmd = a:cmd . ""
+      let cmd = a:cmd . "\<c-m>"
       exec 'silent! !screen -p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"'
     endif
   else
@@ -253,7 +253,7 @@ function! s:ScreenSend(line1, line2)
       call map(lines, 'v:val[start :]')
     endif
   endif
-  let str = join(lines, "") . ""
+  let str = join(lines, "\<c-m>") . "\<c-m>"
   let str = escape(str, '"%#')
   exec 'silent! !screen -p ' . g:ScreenShellWindow . ' -X stuff "' . str . '"'
   exec "normal! \<c-l>"
