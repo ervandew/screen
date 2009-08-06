@@ -134,6 +134,28 @@ endif
     let g:ScreenShellServerName = 'vim'
   endif
 
+  " When not 0, open the spawned shell in an external window (not currently
+  " supported when running in cygwin).
+  if !exists('g:ScreenShellExternal')
+    let g:ScreenShellExternal = 0
+  endif
+
+  " When g:ScreenShellExternal is set, this variable specifies the prefered
+  " shell to use.  If not set, some common terminals will be tried.
+  if !exists('g:ScreenShellTerminal')
+    let g:ScreenShellTerminal = ''
+  endif
+
+" }}}
+
+" Script Variables {{{
+
+  let s:terminals = [
+      \ 'gnome-terminal', 'konsole',
+      \ 'urxvt', 'multi-aterm', 'aterm', 'mrxvt', 'rxvt',
+      \ 'xterm',
+    \ ]
+
 " }}}
 
 " Commands {{{
@@ -258,10 +280,10 @@ endfunction " }}}
 " s:ScreenInit(cmd) {{{
 " Initialize the current screen session.
 function! s:ScreenInit(cmd)
-  let s:shell_window = 'shell'
+  let g:ScreenShellWindow = 'shell'
   " use a portion of the command as the title, if supplied
   if a:cmd != '' && a:cmd !~ '^\s*vim\>'
-    let s:shell_window = s:ScreenCmdName(a:cmd)[:15]
+    let g:ScreenShellWindow = s:ScreenCmdName(a:cmd)[:15]
   endif
 
   if exists('g:ScreenShell') && !exists(':ScreenQuit')
@@ -278,18 +300,45 @@ function! s:ScreenInit(cmd)
     command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
   endif
 
-  let cwd = getcwd()
-  exec 'silent! !screen -X eval ' .
-    \ '"split" ' .
-    \ '"focus down" ' .
-    \ '"resize ' . g:ScreenShellHeight . '" ' .
-    \ '"chdir ' . cwd . '" ' .
-    \ '"screen -t ' . s:shell_window . '" ' .
-    \ '"chdir"'
+  " use screen regions
+  if !g:ScreenShellExternal || has('win32unix')
+    let result = system('screen -X eval ' .
+      \ '"split" ' .
+      \ '"focus down" ' .
+      \ '"resize ' . g:ScreenShellHeight . '" ' .
+      \ '"screen -t ' . g:ScreenShellWindow . '" ')
 
-  if a:cmd != ''
-    let cmd = a:cmd . "\<c-m>"
-    exec 'silent! !screen -p ' . s:shell_window . ' -X stuff "' . cmd . '"'
+    if !v:shell_error && a:cmd != ''
+      let cmd = a:cmd . "\<c-m>"
+      let result = system(
+        \ 'screen -p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
+    endif
+
+  " use an external terminal
+  else
+    let terminal = s:GetTerminal()
+
+    let result = system('screen -X eval ' .
+      \ '"screen -t ' . g:ScreenShellWindow . ' ' . a:cmd . '" ' .
+      \ '"other"')
+
+    if !v:shell_error && terminal != '' && executable(terminal)
+      " gnome-terminal needs quotes around the screen call, but konsole and
+      " rxvt based terms (urxvt, aterm, mrxvt, etc.) don't work properly with
+      " quotes.  xterm seems content either way, so we'll treat gnome-terminal
+      " as the odd ball here.
+      if terminal == 'gnome-terminal'
+        let result = system(terminal . ' -e "screen -x" &')
+      else
+        let result = system(terminal . ' -e screen -x &')
+      endif
+    else
+      echoerr 'Unable to find a suitable terminal, please set g:ScreenShellTerminal'
+    endif
+  endif
+
+  if v:shell_error
+    echoerr result
   endif
 endfunction " }}}
 
@@ -314,9 +363,13 @@ function! s:ScreenSend(line1, line2)
     endif
   endif
   let str = join(lines, "\<c-m>") . "\<c-m>"
-  let str = escape(str, '"%#')
-  exec 'silent! !screen -p ' . s:shell_window . ' -X stuff "' . str . '"'
-  exec "normal! \<c-l>"
+  let str = escape(str, '"\\')
+  let result = system(
+    \ 'screen -p ' . g:ScreenShellWindow .  ' -X stuff "' . str . '"')
+
+  if v:shell_error
+    echoerr result
+  endif
 endfunction " }}}
 
 " s:ScreenQuit(onleave) {{{
@@ -334,7 +387,11 @@ function! s:ScreenQuit(onleave)
     endif
     let bufnum = bufnum + 1
   endwhile
-  silent! !screen -X quit
+
+  let result = system('screen -X quit')
+  if v:shell_error
+    echoerr result
+  endif
 endfunction " }}}
 
 " s:ScreenCmdName(cmd) {{{
@@ -346,6 +403,20 @@ function! s:ScreenCmdName(cmd)
     let cmd = fnamemodify(cmd, ':t')
   endif
   return cmd
+endfunction " }}}
+
+" s:GetTerminal() {{{
+" Generate a name for the given command.
+function! s:GetTerminal()
+  if g:ScreenShellTerminal == ''
+    for term in s:terminals
+      if executable(term)
+        let g:ScreenShellTerminal = term
+        break
+      endif
+    endfor
+  endif
+  return g:ScreenShellTerminal
 endfunction " }}}
 
 " vim:ft=vim:fdm=marker
