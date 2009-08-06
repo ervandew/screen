@@ -160,11 +160,16 @@ endif
 " s:ScreenShell(cmd) {{{
 " Open a split shell.
 function! s:ScreenShell(cmd)
-  if expand('$TERM') !~ '^screen'
-    call s:ScreenBootstrap(a:cmd)
-  else
-    call s:ScreenInit(a:cmd)
-  endif
+  try
+    if expand('$TERM') !~ '^screen'
+      call s:ScreenBootstrap(a:cmd)
+    else
+      call s:ScreenInit(a:cmd)
+    endif
+  finally
+    " wrapping in a try without catching anything just cleans up the vim error
+    " produced by an exception thrown from one of the above functions.
+  endtry
 endfunction " }}}
 
 " s:ScreenBootstrap(cmd) {{{
@@ -225,23 +230,28 @@ function! s:ScreenBootstrap(cmd)
       \ '-c "ScreenShell ' . a:cmd . '"'
   finally
     unlet g:ScreenShell
-    let &sessionoptions = save_sessionoptions
-    call delete(sessionfile)
 
-    " remove taglist session file
-    if exists('g:ScreenShellTaglistSession')
-      call delete(g:ScreenShellTaglistSession)
-    endif
+    " if there was an error writing files, then we didn't get far enough to
+    " need this cleanup.
+    if exists('save_sessionoptions')
+      let &sessionoptions = save_sessionoptions
+      call delete(sessionfile)
 
-    exec "normal! \<c-l>"
-
-    let bufnum = 1
-    while bufnum <= bufend
-      if bufnr(bufnum) != -1
-        call setbufvar(bufnum, '&swapfile', getbufvar(bufnum, 'save_swapfile'))
+      " remove taglist session file
+      if exists('g:ScreenShellTaglistSession')
+        call delete(g:ScreenShellTaglistSession)
       endif
-      let bufnum = bufnum + 1
-    endwhile
+
+      redraw!
+
+      let bufnum = 1
+      while bufnum <= bufend
+        if bufnr(bufnum) != -1
+          call setbufvar(bufnum, '&swapfile', getbufvar(bufnum, 'save_swapfile'))
+        endif
+        let bufnum = bufnum + 1
+      endwhile
+    endif
   endtry
 endfunction " }}}
 
