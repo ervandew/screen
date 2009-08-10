@@ -56,6 +56,24 @@
 "         or
 "       :qa
 "
+"   Configuration:
+"     - g:ScreenShellHeight (Default: 15): Sets the height of gnu screen
+"       region used for the shell.
+"     - g:ScreenShellQuitOnVimExit (Default: 1): When non-zero and the gnu
+"       screen session was started by this script, the screen session will be
+"       closed when vim exits.
+"     - g:ScreenShellServerName (Default: 'vim'): If the gnu screen session is
+"       started by this plugin, then the value of this setting will be used
+"       for the servername arg of the vim instance started in the new gnu
+"       screen session.
+"     - g:ScreenShellExternal (Default: 0): When non-zero and not already in a
+"       screen session, an external shell will be spawned instead of using a
+"       split region for the shell.
+"     - g:ScreenShellTerminal (Default: ''): When g:ScreenShellExternal is
+"       enabled, this value will be used as the name of the terminal
+"       executable to be used.  If this value is empty, a list of common
+"       terminals will be tried until one is found.
+"
 "   Gotchas:
 "     - While running vim in gnu screen, if you detach the session instead of
 "       quitting, then when returning to the non-screen vim, vim will complain
