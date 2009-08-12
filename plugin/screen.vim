@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.3
+" Version: 0.4
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
@@ -316,11 +316,13 @@ function! s:ScreenInit(cmd)
 
   if !exists(':ScreenSend')
     command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+    " remove :ScreenShell command to avoid accidentally calling it again.
+    delcommand ScreenShell
   endif
 
   " use screen regions
   if !g:ScreenShellExternal || has('win32unix')
-    let result = system('screen -X eval ' .
+    let result = s:ScreenExec('screen -X eval ' .
       \ '"split" ' .
       \ '"focus down" ' .
       \ '"resize ' . g:ScreenShellHeight . '" ' .
@@ -328,7 +330,7 @@ function! s:ScreenInit(cmd)
 
     if !v:shell_error && a:cmd != ''
       let cmd = a:cmd . "\<c-m>"
-      let result = system(
+      let result = s:ScreenExec(
         \ 'screen -p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
     endif
 
@@ -380,10 +382,19 @@ function! s:ScreenSend(line1, line2)
       call map(lines, 'v:val[start :]')
     endif
   endif
-  let str = join(lines, "\<c-m>") . "\<c-m>"
-  let str = escape(str, '"\\')
-  let result = system(
-    \ 'screen -p ' . g:ScreenShellWindow .  ' -X stuff "' . str . '"')
+
+  let tmp = tempname()
+  call writefile(lines, tmp)
+  try
+    let result = s:ScreenExec(
+      \ 'screen -p ' . g:ScreenShellWindow .  ' -X eval ' .
+      \ '"msgminwait 0" ' .
+      \ '"readbuf ' . tmp . '" ' .
+      \ '"at ' . g:ScreenShellWindow . ' paste ." ' .
+      \ '"msgminwait 1"')
+  finally
+    call delete(tmp)
+  endtry
 
   if v:shell_error
     echoerr result
@@ -406,10 +417,25 @@ function! s:ScreenQuit(onleave)
     let bufnum = bufnum + 1
   endwhile
 
-  let result = system('screen -X quit')
+  let result = s:ScreenExec('screen -X quit')
+
   if v:shell_error
     echoerr result
   endif
+endfunction " }}}
+
+" s:ScreenExec(cmd) {{{
+" Execute a screen command, handling execution difference between cygwin and a
+" real unix system.
+function! s:ScreenExec(cmd)
+  if has('win32unix')
+    let result = ''
+    exec 'silent! !' . a:cmd
+    redraw!
+  else
+    let result = system(a:cmd)
+  endif
+  return result
 endfunction " }}}
 
 " s:ScreenCmdName(cmd) {{{
