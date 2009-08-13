@@ -11,12 +11,14 @@
 "   external shell.
 "
 "   Currently tested on Linux and Windows (win32 [g]vim and cygwin vim), but
-"   should work on any unix based platform where screen is supported (OSX,
-"   BSD, Solaris, etc.).  Note that in my testing of cygwin, invocations of
-"   screen were significantly slower and less fluid than on Linux.  The
+"   should also work on any unix based platform where screen is supported
+"   (OSX, BSD, Solaris, etc.).  Note that in my testing of cygwin, invocations
+"   of screen were significantly slower and less fluid than on Linux.  The
 "   Windows experience is better when using gvim to spawn a cygwin shell
-"   running screen, but the cygwin bin directory needs to be in your windows
-"   path.
+"   running screen.
+"
+"   Windows Users: Whether you are using gvim or not, you will need cygwin
+"   installed with cygwin's bin directory in your windows PATH.
 "
 "   Commands:
 "     :ScreenShell [cmd] - Starts a screen hosted shell performing the
@@ -182,7 +184,7 @@
 " Script Variables {{{
 
   if has('win32') || has('win64') || has('win32unix')
-    let s:terminals = ['c:\cygwin\bin\bash']
+    let s:terminals = ['bash']
   else
     let s:terminals = [
         \ 'gnome-terminal', 'konsole',
@@ -251,6 +253,8 @@ endfunction " }}}
 function! s:ScreenBootstrap(cmd)
   try
     let g:ScreenShellBootstrapped = 1
+    let g:ScreenShellSession = substitute(tempname(), '\W', '', 'g')
+
     wa
     let save_sessionoptions = &sessionoptions
     set sessionoptions+=globals
@@ -319,8 +323,8 @@ function! s:ScreenBootstrap(cmd)
       let server = ''
     endif
 
-    exec 'silent! !screen -t "' . title . '" vim ' .
-      \ server .
+    exec 'silent! !screen -S ' . g:ScreenShellSession .
+      \ ' -t "' . title . '" vim ' . server .
       \ '-c "silent source ' . escape(sessionfile, ' ') . '" ' .
       \ '-c "ScreenShell ' . a:cmd . '"'
   finally
@@ -353,6 +357,9 @@ endfunction " }}}
 " s:ScreenInit(cmd) {{{
 " Initialize the current screen session.
 function! s:ScreenInit(cmd)
+  let g:ScreenShellSession = exists('g:ScreenShellSession') ?
+    \ g:ScreenShellSession : substitute(tempname(), '\W', '', 'g')
+
   let g:ScreenShellWindow = 'shell'
   " use a portion of the command as the title, if supplied
   if a:cmd != '' && a:cmd !~ '^\s*vim\>'
@@ -383,7 +390,7 @@ function! s:ScreenInit(cmd)
 
   " use screen regions
   if !external
-    let result = s:ScreenExec('screen -X eval ' .
+    let result = s:ScreenExec('-X eval ' .
       \ '"split" ' .
       \ '"focus down" ' .
       \ '"resize ' . g:ScreenShellHeight . '" ' .
@@ -392,7 +399,7 @@ function! s:ScreenInit(cmd)
     if !v:shell_error && a:cmd != ''
       let cmd = a:cmd . "\<c-m>"
       let result = s:ScreenExec(
-        \ 'screen -p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
+        \ '-p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
     endif
 
   " use an external terminal
@@ -400,7 +407,7 @@ function! s:ScreenInit(cmd)
     let terminal = s:GetTerminal()
     let screen_args = '-t ' . g:ScreenShellWindow
     if !has('gui_running') && exists('g:ScreenShellBootstrapped')
-      let result = s:ScreenExec('screen -X eval ' .
+      let result = s:ScreenExec('-X eval ' .
         \ '"screen -t ' . g:ScreenShellWindow . ' ' . a:cmd . '" ' .
         \ '"other"')
       let screen_args = '-x'
@@ -411,6 +418,8 @@ function! s:ScreenInit(cmd)
         echoerr 'Unable to find a terminal, please set g:ScreenShellTerminal'
       endif
 
+      let screen_cmd = 'screen -S ' . g:ScreenShellSession . ' ' . screen_args
+
       " handle using cygwin bash
       if has('win32') || has('win64') || has('win32unix')
         let result = ''
@@ -419,7 +428,7 @@ function! s:ScreenInit(cmd)
           let command = substitute(command, '\', '/', 'g')
           let command = 'cmd /c ' . command
         endif
-        let command .= ' --login -c "screen ' . screen_args . '"'
+        let command .= ' --login -c "' . screen_cmd . '"'
         exec 'silent !' . command
         redraw!
 
@@ -428,10 +437,10 @@ function! s:ScreenInit(cmd)
       " quotes.  xterm seems content either way, so we'll treat gnome-terminal
       " as the odd ball here.
       elseif terminal == 'gnome-terminal'
-        let result = system(terminal . ' -e "screen ' . screen_args . '" &')
+        let result = system(terminal . ' -e "' . screen_cmd . '" &')
 
       else
-        let result = system(terminal . ' -e screen ' . screen_args . ' &')
+        let result = system(terminal . ' -e ' . screen_cmd . ' &')
       endif
     endif
   endif
@@ -466,7 +475,7 @@ function! s:ScreenSend(line1, line2)
   call writefile(lines, tmp)
   try
     let result = s:ScreenExec(
-      \ 'screen -p ' . g:ScreenShellWindow .  ' -X eval ' .
+      \ '-p ' . g:ScreenShellWindow .  ' -X eval ' .
       \ '"msgminwait 0" ' .
       \ '"readbuf ' . tmp . '" ' .
       \ '"at ' . g:ScreenShellWindow . ' paste ." ' .
@@ -506,7 +515,7 @@ function! s:ScreenQuit(onleave)
     augroup END
   endif
 
-  let result = s:ScreenExec('screen -X quit')
+  let result = s:ScreenExec('-X quit')
 
   if v:shell_error
     if result !~ 'No screen session found'
@@ -519,12 +528,13 @@ endfunction " }}}
 " Execute a screen command, handling execution difference between cygwin and a
 " real unix system.
 function! s:ScreenExec(cmd)
+  let cmd = 'screen -S ' . g:ScreenShellSession . ' ' . a:cmd
   if has('win32unix')
     let result = ''
-    exec 'silent! !' . a:cmd
+    exec 'silent! !' . cmd
     redraw!
   else " system() works for windows gvim too
-    let result = system(a:cmd)
+    let result = system(cmd)
   endif
   return result
 endfunction " }}}
