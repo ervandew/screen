@@ -301,6 +301,9 @@ function! s:ScreenShellAttach(session)
       return
     endif
     let result = s:StartScreenTerminal('-r ' . g:ScreenShellSession)
+    if result == '0'
+      return
+    endif
     if v:shell_error
       echoerr result
     endif
@@ -465,10 +468,10 @@ function! s:ScreenInit(cmd)
 
     else
       let result = s:ScreenExec('-d -m')
-      if !v:shell_error
+      if !v:shell_error && result != '0'
         let result = s:StartScreenTerminal('-r ' . g:ScreenShellSession)
       endif
-      if !v:shell_error
+      if !v:shell_error && result != '0'
         " Hack, but should be plenty of time to let screen get to a state
         " where it will apply the title command.
         sleep 500m
