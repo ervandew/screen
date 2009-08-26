@@ -410,9 +410,6 @@ endfunction " }}}
 " s:ScreenInit(cmd) {{{
 " Initialize the current screen session.
 function! s:ScreenInit(cmd)
-  let g:ScreenShellSession = exists('g:ScreenShellSession') ?
-    \ g:ScreenShellSession : substitute(tempname(), '\W', '', 'g')
-
   let g:ScreenShellWindow = 'shell'
   " use a portion of the command as the title, if supplied
   if a:cmd != '' && a:cmd !~ '^\s*vim\>'
@@ -458,6 +455,9 @@ function! s:ScreenInit(cmd)
 
   " use an external terminal
   else
+    let g:ScreenShellSession = exists('g:ScreenShellSession') ?
+      \ g:ScreenShellSession : substitute(tempname(), '\W', '', 'g')
+
     if !has('gui_running') && exists('g:ScreenShellBootstrapped')
       let result = s:ScreenExec('-X eval ' .
         \ '"screen -t ' . g:ScreenShellWindow . '" ' . '"other"')
@@ -587,7 +587,12 @@ endfunction " }}}
 " Execute a screen command, handling execution difference between cygwin and a
 " real unix system.
 function! s:ScreenExec(cmd)
-  let cmd = 'screen -S ' . g:ScreenShellSession . ' ' . a:cmd
+  let cmd = 'screen '
+  if exists('g:ScreenShellSession')
+    let cmd .= '-S ' . g:ScreenShellSession . ' '
+  endif
+  let cmd .= a:cmd
+
   if has('win32unix')
     let result = ''
     exec 'silent! !' . cmd
