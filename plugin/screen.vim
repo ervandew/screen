@@ -460,10 +460,16 @@ function! s:ScreenInit(cmd)
   else
     if !has('gui_running') && exists('g:ScreenShellBootstrapped')
       let result = s:ScreenExec('-X eval ' .
-        \ '"screen -t ' . g:ScreenShellWindow . ' ' . a:cmd . '" ' .
-        \ '"other"')
+        \ '"screen -t ' . g:ScreenShellWindow . '" ' . '"other"')
+
       if !v:shell_error
         let result = s:StartScreenTerminal('-S ' . g:ScreenShellSession . ' -x')
+
+        if !v:shell_error && result != '0' && a:cmd != ''
+          let cmd = a:cmd . "\<cr>"
+          let result = s:ScreenExec(
+            \ '-p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
+        endif
       endif
 
     else
