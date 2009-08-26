@@ -448,7 +448,7 @@ function! s:ScreenInit(cmd)
       \ '"screen -t ' . g:ScreenShellWindow . '" ')
 
     if !v:shell_error && a:cmd != ''
-      let cmd = a:cmd . "\<c-m>"
+      let cmd = a:cmd . "\<cr>"
       let result = s:ScreenExec(
         \ '-p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
     endif
