@@ -482,6 +482,13 @@ function! s:ScreenInit(cmd)
         " where it will apply the title command.
         sleep 500m
         let result = s:ScreenExec('-X title ' . g:ScreenShellWindow)
+
+        " execute the supplied command if any
+        if !v:shell_error && a:cmd != ''
+          let cmd = a:cmd . "\<cr>"
+          let result = s:ScreenExec(
+            \ '-p ' . g:ScreenShellWindow . ' -X stuff "' . cmd . '"')
+        endif
       endif
     endif
   endif
