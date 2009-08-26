@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.5
+" Version: 0.6
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
