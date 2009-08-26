@@ -473,10 +473,17 @@ function! s:ScreenInit(cmd)
       endif
 
     else
-      let result = s:ScreenExec('-d -m')
-      if !v:shell_error && result != '0'
-        let result = s:StartScreenTerminal('-r ' . g:ScreenShellSession)
+      if has('win32') || has('win64') || has('win32unix')
+        let result = s:StartScreenTerminal('-S ' . g:ScreenShellSession)
+        " like, the sleep hack below, but longer for windows.
+        sleep 1000m
+      else
+        let result = s:ScreenExec('-d -m')
+        if !v:shell_error && result != '0'
+          let result = s:StartScreenTerminal('-r ' . g:ScreenShellSession)
+        endif
       endif
+
       if !v:shell_error && result != '0'
         " Hack, but should be plenty of time to let screen get to a state
         " where it will apply the title command.
