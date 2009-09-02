@@ -376,6 +376,15 @@ function! s:ScreenBootstrap(cmd)
       let server = ''
     endif
 
+    " suppress prompt and auto reload changed files for the user when
+    " returning to this vim session
+    augroup screen_shell_file_changed
+      autocmd!
+      autocmd FileChangedShell *
+        \ let v:fcs_choice = (v:fcs_reason == 'changed' ? 'reload' : 'ask') |
+        \ autocmd! screen_shell_file_changed * *
+    augroup END
+
     exec 'silent! !screen -S ' . g:ScreenShellSession .
       \ ' vim ' . server .
       \ '-c "silent source ' . escape(sessionfile, ' ') . '" ' .
