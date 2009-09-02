@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.6
+" Version: 0.7
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
@@ -513,9 +513,10 @@ function! s:ScreenSend(line1, line2)
   if mode != '' && line("'<") == a:line1
     if mode == "v"
       let start = col("'<") - 1
-      let end = col("'>")
-      let lines[0] = lines[0][start :]
+      let end = col("'>") - 1
+      " slice in end before start in case the selection is only one line
       let lines[-1] = lines[-1][: end]
+      let lines[0] = lines[0][start :]
     elseif mode == "\<c-v>"
       let start = col("'<")
       if col("'>") < start
