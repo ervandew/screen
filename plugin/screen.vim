@@ -6,7 +6,7 @@
 "   easily convert your current vim session into one running in gnu screen
 "   with a split gnu screen window containing a shell, and to quickly send
 "   statements/code to whatever program is running in that shell (bash,
-"   python, irb, etc.).  Spawing the shell in your favorite terminal emulator
+"   python, irb, etc.).  Spawning the shell in your favorite terminal emulator
 "   is also supported for gvim users or anyone else that just prefers an
 "   external shell.
 "
@@ -359,6 +359,15 @@ function! s:ScreenBootstrap(cmd)
       if bufnr(bufnum) != -1
         call setbufvar(bufnum, 'save_swapfile', getbufvar(bufnum, '&swapfile'))
         call setbufvar(bufnum, '&swapfile', 0)
+
+        " suppress prompt and auto reload changed files for the user when
+        " returning to this vim session
+        augroup screen_shell_file_changed
+          exec 'autocmd! FileChangedShell <buffer=' . bufnum . '>'
+          exec 'autocmd FileChangedShell <buffer=' . bufnum . '> ' .
+            \ 'let v:fcs_choice = (v:fcs_reason == "changed" ? "reload" : "ask") | ' .
+            \ 'autocmd! screen_shell_file_changed FileChangedShell <buffer=' . bufnum . '>'
+        augroup END
       endif
       let bufnum = bufnum + 1
     endwhile
@@ -375,15 +384,6 @@ function! s:ScreenBootstrap(cmd)
     if has('win32') || has('win64')
       let server = ''
     endif
-
-    " suppress prompt and auto reload changed files for the user when
-    " returning to this vim session
-    augroup screen_shell_file_changed
-      autocmd!
-      autocmd FileChangedShell *
-        \ let v:fcs_choice = (v:fcs_reason == 'changed' ? 'reload' : 'ask') |
-        \ autocmd! screen_shell_file_changed * *
-    augroup END
 
     exec 'silent! !screen -S ' . g:ScreenShellSession .
       \ ' vim ' . server .
