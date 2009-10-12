@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.7
+" Version: 0.8
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
@@ -105,6 +105,23 @@
 "       enabled or you are running gvim, this value will be used as the name
 "       of the terminal executable to be used.  If this value is empty, a list
 "       of common terminals will be tried until one is found.
+"
+"   Script Integration:
+"     To permit integration with your own, or 3rd party, scripts, a funcref is
+"     made globally available while the screen shell mode is enabled, allowing
+"     you to send your own strings to the attached shell.
+"
+"     Here are some examples of using this funcref to send some commands to
+"     bash:
+"       call ScreenShellSend("echo foo\necho bar")
+"       call ScreenShellSend('echo -e "foo\nbar"')
+"       call ScreenShellSend("echo -e \"foo\\nbar\"")
+"
+"     Sending a list of strings is also supported:
+"       call ScreenShellSend(["echo foo", "echo bar"])
+"
+"     You can test that the funcref exists using:
+"        exists('ScreenShellSend')
 "
 "   Gotchas:
 "     - While running vim in gnu screen, if you detach the session instead of
@@ -312,6 +329,7 @@ function! s:ScreenShellAttach(session)
   let g:ScreenShellSession = session[0]
   if !exists(':ScreenSend')
     command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+    let g:ScreenShellSend = s:ScreenSendFuncRef()
   endif
 endfunction " }}}
 
@@ -362,11 +380,11 @@ function! s:ScreenBootstrap(cmd)
 
         " suppress prompt and auto reload changed files for the user when
         " returning to this vim session
-        augroup screen_shell_file_changed
+        augroup screenshell_filechanged
           exec 'autocmd! FileChangedShell <buffer=' . bufnum . '>'
           exec 'autocmd FileChangedShell <buffer=' . bufnum . '> ' .
             \ 'let v:fcs_choice = (v:fcs_reason == "changed" ? "reload" : "ask") | ' .
-            \ 'autocmd! screen_shell_file_changed FileChangedShell <buffer=' . bufnum . '>'
+            \ 'autocmd! screenshell_filechanged FileChangedShell <buffer=' . bufnum . '>'
         augroup END
       endif
       let bufnum = bufnum + 1
@@ -443,6 +461,7 @@ function! s:ScreenInit(cmd)
 
   if !exists(':ScreenSend')
     command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+    let g:ScreenShellSend = s:ScreenSendFuncRef()
     " remove :ScreenShell command to avoid accidentally calling it again.
     delcommand ScreenShell
     delcommand ScreenShellAttach
@@ -514,26 +533,46 @@ function! s:ScreenInit(cmd)
   endif
 endfunction " }}}
 
-" s:ScreenSend(line1, line2) {{{
+" s:ScreenSend(string or list<string> or line1, line2) {{{
 " Send lines to the screen shell.
-function! s:ScreenSend(line1, line2)
-  let lines = getline(a:line1, a:line2)
-  let mode = visualmode(1)
-  if mode != '' && line("'<") == a:line1
-    if mode == "v"
-      let start = col("'<") - 1
-      let end = col("'>") - 1
-      " slice in end before start in case the selection is only one line
-      let lines[-1] = lines[-1][: end]
-      let lines[0] = lines[0][start :]
-    elseif mode == "\<c-v>"
-      let start = col("'<")
-      if col("'>") < start
-        let start = col("'>")
-      endif
-      let start = start - 1
-      call map(lines, 'v:val[start :]')
+function! s:ScreenSend(...)
+  if a:0 == 1
+    let argtype = type(a:1)
+    if argtype == 1
+      let lines = split(a:1, "\n")
+    elseif argtype == 3
+      let lines = a:1
+    else
+      echoe 'ScreenShell: Argument must be a string or list.'
+      return
     endif
+  elseif a:0 == 2
+    if type(a:1) != 0 || type(a:2) != 0
+      echoe 'ScreenShell: Arguments must be positive integer line numbers.'
+      return
+    endif
+
+    let lines = getline(a:1, a:2)
+    let mode = visualmode(1)
+    if mode != '' && line("'<") == a:1
+      if mode == "v"
+        let start = col("'<") - 1
+        let end = col("'>") - 1
+        " slice in end before start in case the selection is only one line
+        let lines[-1] = lines[-1][: end]
+        let lines[0] = lines[0][start :]
+      elseif mode == "\<c-v>"
+        let start = col("'<")
+        if col("'>") < start
+          let start = col("'>")
+        endif
+        let start = start - 1
+        call map(lines, 'v:val[start :]')
+      endif
+    endif
+  else
+    echoe 'ScreenShell: Invalid number of arguments for ScreenSend.'
+    return
   endif
 
   let tmp = tempname()
@@ -563,6 +602,12 @@ function! s:ScreenSend(line1, line2)
   endif
 endfunction " }}}
 
+" s:ScreenSendFuncRef() {{{
+function s:ScreenSendFuncRef()
+  let sid = matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_ScreenSendFuncRef$')
+  return function(printf('<SNR>%s_ScreenSend', sid))
+endfun " }}}
+
 " s:ScreenQuit(onleave) {{{
 " Quit the current screen session (short cut to manually quiting vim and
 " closing all screen windows.
@@ -586,6 +631,7 @@ function! s:ScreenQuit(onleave)
       \ ScreenShellAttach :call <SID>ScreenShellAttach('<args>')
     delcommand ScreenQuit
     delcommand ScreenSend
+    unlet g:ScreenShellSend
     augroup screen_shell
       autocmd!
     augroup END
