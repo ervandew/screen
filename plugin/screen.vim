@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 0.8
+" Version: 0.9
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
@@ -423,13 +423,42 @@ function! s:ScreenBootstrap(cmd)
 
       redraw!
 
+      let possible_detach = 0
       let bufnum = 1
-      while bufnum <= bufend
-        if bufnr(bufnum) != -1
-          call setbufvar(bufnum, '&swapfile', getbufvar(bufnum, 'save_swapfile'))
-        endif
-        let bufnum = bufnum + 1
-      endwhile
+      let winrestcmd = winrestcmd()
+      new
+      try
+        while bufnum <= bufend
+          if bufnr(bufnum) != -1
+            try
+              call setbufvar(bufnum, '&swapfile', getbufvar(bufnum, 'save_swapfile'))
+            catch /E325/
+              let possible_detach = 1
+              exec 'buffer ' . bufnum
+              try
+                redraw
+                edit
+              catch
+              endtry
+            endtry
+          endif
+          let bufnum = bufnum + 1
+        endwhile
+      finally
+        quit!
+        exec winrestcmd
+      endtry
+
+      if possible_detach
+        echohl WarningMsg
+        echom 'Warning: detatching from a screen session started by ' .
+            \ ':ScreenShell may result in conflicting swap files like those ' .
+            \ 'just encountered. Due to this possibility, detaching from a ' .
+            \ 'screen session started by :ScreenShell is discouraged.  ' .
+            \ 'Instead you should issue a :ScreenQuit or exit the vim ' .
+            \ 'instance in screen normally (:qa)'
+        echohl None
+      endif
     endif
   endtry
 endfunction " }}}
