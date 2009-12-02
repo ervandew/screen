@@ -1,5 +1,6 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 " Version: 1.0
+" GetLatestVimScripts: 2711 1 :AutoInstall: screen.vim
 "
 " Description: {{{
 "   This plugin aims to simulate an embedded shell in vim by allowing you to
@@ -187,6 +188,9 @@
 "   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 "   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 " }}}
+
+let s:save_cpo=&cpo
+set cpo&vim
 
 " Global Variables {{{
 
@@ -1040,5 +1044,7 @@ function s:screenTmux.focusWindow() dict " {{{
     return self.exec('select-window -t:' . window)
   endif
 endfunction " }}}
+
+let &cpo = s:save_cpo
 
 " vim:ft=vim:fdm=marker
