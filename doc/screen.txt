@@ -22,6 +22,8 @@ Screen                                      *screen*
      Server name                        |screen-servername|
      Terminal                           |screen-terminal|
 4. Script integration                   |screen-scriptintegration|
+5. Gotchas                              |screen-gotchas|
+6. Troubleshooting                      |screen-troubleshooting|
 
 ==============================================================================
 1. Introduction                             *screen-intro*
@@ -227,6 +229,40 @@ swap files already existing.  So try to avoid detaching.
 Not all vim plugins support saving state to or loading from vim session files,
 so when running :ScreenShell some buffers may not load correctly if they are
 backed by such a plugin.
+
+
+==============================================================================
+5. Troubleshooting                          *screen-troubleshooting*
+
+Running :ScreenShell resulting is spawning of vim instances until terminal
+runs out of room.                           *screen-bootstrap*
+
+  When running :ScreenShell from a console version of vim, screen.vim must
+  determine if you are currently in a gnu screen session or not.  To
+  accomplish this it will examine the $TERM environment variable which it
+  expects to start with 'screen' ('screen', 'screen-256color', etc.).  If
+  after starting a gnu screen session the $TERM variable does not start with
+  'screen' then screen.vim will attempt to start gnu screen again, resulting
+  in an infinite loop.
+
+  Typically the issue is that you are either setting screen's term value in
+  your ~/.screenrc or the term value you are using doesn't have a
+  corrisponding terminfo file resulting in $TERM being set to some other
+  value. Take a look at the |screen-256color| docs below for more information.
+
+256 color support                           *screen-256color*
+
+  To enable 256 color support in screen you'll need to add the following to
+  your ~/.screenrc:
+
+    term screen-256color
+
+  Please note that this will set your $TERM to 'screen-256color' which will
+  require that your system has a corresponding terminfo file.  Not all systems
+  have this installed by default so you may need to install an additional
+  package:
+
+    ubuntu - $ apt-get install ncurses-term
 
 
 vim:tw=78:ts=8:ft=help:norl:
