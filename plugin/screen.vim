@@ -84,6 +84,11 @@ set cpo&vim
     let g:ScreenShellExternal = 0
   endif
 
+  " Sets whether to focus 'vim' or the 'shell' when a shell region is opened.
+  if !exists('g:ScreenShellInitialFocus')
+    let g:ScreenShellInitialFocus = 'vim'
+  endif
+
   " Specifies a name to be supplied to vim's --servername arg when invoked in
   " a new screen session.
   if !exists('g:ScreenShellServerName')
@@ -749,11 +754,13 @@ endfunction " }}}
 
 function s:screenGnuScreen.openRegion() dict " {{{
   let orient = g:ScreenShellOrientation == 'vertical' ? 'vert_' : ''
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' "focus up"'
   return self.exec('-X eval ' .
     \ '"' . orient . 'split" ' .
     \ '"focus down" ' .
     \ '"resize ' . s:GetSize() . '" ' .
-    \ '"screen -t ' . g:ScreenShellWindow . '"')
+    \ '"screen -t ' . g:ScreenShellWindow . '"' .
+    \ focus)
 endfunction " }}}
 
 function s:screenGnuScreen.setTitle() dict " {{{
@@ -863,9 +870,11 @@ endfunction " }}}
 
 function s:screenTmux.openRegion() dict " {{{
   let orient = g:ScreenShellOrientation == 'vertical' ? '-h ' : ''
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' ; up-pane'
   let result = self.exec(
     \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
-    \ 'rename-window ' . g:ScreenShellWindow)
+    \ 'rename-window ' . g:ScreenShellWindow .
+    \ focus)
   if v:shell_error
     return result
   endif

@@ -190,6 +190,15 @@ spawned instead of using a split region for the shell.  Note: when using gvim,
 an external shell is always used.
 
 
+Initial focus                               *screen-focus*
+                                            *g:ScreenShellInitialFocus*
+
+g:ScreenShellInitialFocus (default value: 'vim')
+
+When set to 'shell' the newly created shell region will be focused when first
+creating the shell region.
+
+
 Server Name                                 *screen-servername*
                                             *g:ScreenShellServerName*
 
