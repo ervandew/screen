@@ -98,6 +98,16 @@ Below is a comprehensive list of the commands which screen.vim provides:
        shell.
        Ex. :ScreenShell ipython
 
+:ScreenShellVertical [cmd]     *screen-shell-vertical* *:ScreenShellVertical*
+  Just like |:ScreenShell| but when creating the split region for the shell, a
+  vertical split is used instead of the default horizontal split.  Supported
+  via tmux by default, but gnu screen requires the vertical split patch
+  (http://fungi.yuggoth.org/vsp4s/) and you must explicitly enable support for
+  gnu screen vertical splitting in screen.vim by adding the following to your
+  vimrc:
+    let g:ScreenShellGnuScreenVerticalSupport = 1
+
+
 :ScreenShellAttach [session]        *screen-shellattach* *:ScreenShellAttach*
   Sets the necessary internal variables to allow :ScreenSend invocations to
   send to the specified screen session.  If no session is provided, then the
@@ -145,7 +155,20 @@ Shell height                                *screen-shellheight*
 
 g:ScreenShellHeight (default value: 15)
 
-Sets the height of the gnu screen (or tmux) region used for the shell.
+Sets the height of the gnu screen (or tmux) region used for the shell.  When
+the value is less than or equal to 0, then half of vim's reported window
+height will be used.
+
+
+Shell width                                 *screen-shellwidth*
+                                            *g:ScreenShellWidth*
+
+g:ScreenShellWidth (default value: -1)
+
+Sets the width of the gnu screen (or tmux) region used for the shell when
+splitting the region vertially (vertical split support in gnu screen requires
+the vertical split patch).  When the value is less than or equal to 0, then
+half of vim's reported window width will be used.
 
 
 Quit on exit                                *screen-quitonexit*
