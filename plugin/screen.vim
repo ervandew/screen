@@ -170,7 +170,9 @@ function! s:ScreenShell(cmd, orientation)
   let g:ScreenShellOrientation = a:orientation
 
   try
-    let bootstrap = !has('gui_running') && expand('$TERM') !~ '^screen'
+    let bootstrap = !has('gui_running') &&
+      \ !exists('g:ScreenShellBootstrapped') &&
+      \ expand('$TERM') !~ '^screen'
 
     " if using an external shell without the need to set the vim servername,
     " then don't bootstrap
@@ -907,14 +909,14 @@ function s:screenTmux.sendTempBuffer(tmp) dict " {{{
   endif
 
   " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
-  if expand('$TERM') =~ '^screen'
+  if exists('g:ScreenShellBootstrapped')
     call self.exec('select-pane -t 1')
   endif
   let result = self.exec(printf(
     \ 'load-buffer %s ; ' .
     \ 'paste-buffer', a:tmp
     \ ))
-  if expand('$TERM') =~ '^screen'
+  if exists('g:ScreenShellBootstrapped')
     call self.exec('select-pane -t 0')
   endif
 
