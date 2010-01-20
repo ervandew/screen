@@ -155,6 +155,14 @@ set cpo&vim
 " s:ScreenShell(cmd, orientation) {{{
 " Open a split shell.
 function! s:ScreenShell(cmd, orientation)
+  if g:ScreenImpl != 'GnuScreen' && g:ScreenImpl != 'Tmux'
+    echohl WarningMsg
+    echom 'Unsupported g:ScreenImpl value "' . g:ScreenImpl . '".  ' .
+      \ 'Supported values included "GnuScreen" or "Tmux".'
+    echohl Normal
+    return
+  endif
+
   if !s:screen{g:ScreenImpl}.isValid()
     return
   endif
