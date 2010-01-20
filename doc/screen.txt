@@ -102,10 +102,13 @@ Below is a comprehensive list of the commands which screen.vim provides:
   Just like |:ScreenShell| but when creating the split region for the shell, a
   vertical split is used instead of the default horizontal split.  Supported
   via tmux by default, but gnu screen requires the vertical split patch
-  (http://fungi.yuggoth.org/vsp4s/) and you must explicitly enable support for
-  gnu screen vertical splitting in screen.vim by adding the following to your
-  vimrc:
-    let g:ScreenShellGnuScreenVerticalSupport = 1
+  (http://fungi.yuggoth.org/vsp4s/) or the unreleased screen 4.1 code and you
+  must explicitly enable support for gnu screen vertical splitting in
+  screen.vim by adding the following to your vimrc, indicating whether you are
+  using a patched gnu screen or the 4.1 code base:
+    let g:ScreenShellGnuScreenVerticalSupport = 'patch'
+      or
+    let g:ScreenShellGnuScreenVerticalSupport = 'native'
 
 
 :ScreenShellAttach [session]        *screen-shellattach* *:ScreenShellAttach*

@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 1.0
+" Version: 1.1
 " GetLatestVimScripts: 2711 1 :AutoInstall: screen.vim
 "
 " Description: {{{
@@ -101,8 +101,9 @@ set cpo&vim
     let g:ScreenShellTerminal = ''
   endif
 
+  " Sets whether, and using which method, gnu screen supports vertical splits
   if !exists('g:ScreenShellGnuScreenVerticalSupport')
-    let g:ScreenShellGnuScreenVerticalSupport = 0
+    let g:ScreenShellGnuScreenVerticalSupport = ''
   endif
 
 " }}}
@@ -129,7 +130,7 @@ set cpo&vim
       \ ScreenShellAttach :call <SID>ScreenShellAttach('<args>')
     if !has('gui_running') &&
      \ !g:ScreenShellExternal &&
-     \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport)
+     \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
       command -nargs=? -complete=shellcmd ScreenShellVertical :call <SID>ScreenShell('<args>', 'vertical')
     endif
   endif
@@ -763,10 +764,25 @@ function s:screenGnuScreen.newWindow(focus) dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.openRegion() dict " {{{
-  let orient = g:ScreenShellOrientation == 'vertical' ? 'vert_' : ''
+  let splitcmd = 'split'
+  if g:ScreenShellOrientation == 'vertical'
+    if g:ScreenShellGnuScreenVerticalSupport == 'patch'
+      let splitcmd = 'vert_split'
+    elseif g:ScreenShellGnuScreenVerticalSupport == 'native'
+      let splitcmd = 'split -v'
+    else
+      echohl WarningMsg
+      echom 'Unsupported g:ScreenShellGnuScreenVerticalSupport value "' .
+        \ g:ScreenShellGnuScreenVerticalSupport . '". ' .
+        \ 'Supported values included "patch" or "native".'
+      echohl Normal
+      let g:ScreenShellOrientation = ''
+    endif
+  endif
+
   let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' "focus up"'
   return self.exec('-X eval ' .
-    \ '"' . orient . 'split" ' .
+    \ '"' . splitcmd . '" ' .
     \ '"focus down" ' .
     \ '"resize ' . s:GetSize() . '" ' .
     \ '"screen -t ' . g:ScreenShellWindow . '"' .
