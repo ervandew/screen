@@ -169,7 +169,7 @@ Shell width                                 *screen-shellwidth*
 g:ScreenShellWidth (default value: -1)
 
 Sets the width of the gnu screen (or tmux) region used for the shell when
-splitting the region vertially (vertical split support in gnu screen requires
+splitting the region vertically (vertical split support in gnu screen requires
 the vertical split patch).  When the value is less than or equal to 0, then
 half of vim's reported window width will be used.
 
@@ -243,7 +243,7 @@ Sending a list of strings is also supported:
 You can test that the funcref exists using:
    exists('ScreenShellSend')
 
-In addition to sending text to the screen shell, another funcref is availble
+In addition to sending text to the screen shell, another funcref is available
 allowing you to focus the shell region in screen.  Note: focusing an external
 screen shell is not supported.
 
@@ -269,23 +269,26 @@ backed by such a plugin.
 ==============================================================================
 5. Troubleshooting                          *screen-troubleshooting*
 
-Running :ScreenShell resulting is spawning of vim instances until terminal
-runs out of room.                           *screen-bootstrap*
+Below are a list of possible issues you may encounter and some info on
+resolving those issues.
 
-  When running :ScreenShell from a console version of vim, screen.vim must
-  determine if you are currently in a gnu screen session or not.  To
-  accomplish this it will examine the $TERM environment variable which it
-  expects to start with 'screen' ('screen', 'screen-256color', etc.).  If
-  after starting a gnu screen session the $TERM variable does not start with
-  'screen' then screen.vim will attempt to start gnu screen again, resulting
-  in an infinite loop.
+- When already in a screen session, running :ScreenShell results in a nested
+  screen session instead of using the existing one.
+                                            *screen-bootstrap*
 
-  Typically the issue is that you are either setting screen's term value in
-  your ~/.screenrc or the term value you are using doesn't have a
-  corrisponding terminfo file resulting in $TERM being set to some other
-  value. Take a look at the |screen-256color| docs below for more information.
+  When running :ScreenShell from a console version of vim, screen.vim examines
+  the $TERM environment variable which it expects to start with 'screen'
+  ('screen', 'screen-256color', etc.) if you are in an existing screen/tmux
+  session.  Should the TERM value not start with 'screen', then screen.vim
+  assumes that a screen session must be started for you.
 
-256 color support                           *screen-256color*
+  The cause of TERM not containing a 'screen' values is usually the result of
+  having a non-screen term value in your ~/.screenrc or the term value you are
+  using doesn't have a corresponding terminfo file resulting in $TERM being
+  set to some other value. Take a look at the |screen-256color| docs below for
+  more information.
+
+- 256 color support                         *screen-256color*
 
   To enable 256 color support in screen you'll need to add the following to
   your ~/.screenrc:
