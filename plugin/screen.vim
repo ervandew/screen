@@ -113,7 +113,7 @@ set cpo&vim
   if has('win32') || has('win64') || has('win32unix')
     let s:terminals = ['bash']
   elseif has('mac') && has('gui_running')
-	let s:terminals = ['Terminal.app']
+    let s:terminals = ['Terminal.app']
   else
     let s:terminals = [
         \ 'gnome-terminal', 'konsole',
@@ -154,14 +154,6 @@ set cpo&vim
   "endif
 
 " }}}
-
-function! s:macGuiCmd(cmd, term)
-	if a:term != '0'
-	  return 'silent !osascript -e "tell application \"' . a:term . '\"" -e "do script \"' . a:cmd . '\"" -e "end tell"'
-	else
-	  let cmd = substitute(a:cmd, '"', "'", 'g')
-	  return 'silent !osascript -e "do shell script \"' . cmd . '\""' 
-endfunction
 
 " s:ScreenShell(cmd, orientation) {{{
 " Open a split shell.
@@ -596,8 +588,8 @@ function! s:StartTerminal(command)
     redraw!
 
   elseif has('mac') && has('gui_running')
-	let result = ''
-	exec s:macGuiCmd(a:command, terminal)
+    let result = ''
+    exec s:macGuiCmd(a:command, terminal)
 
   " gnome-terminal needs quotes around the screen call, but konsole and
   " rxvt based terms (urxvt, aterm, mrxvt, etc.) don't work properly with
@@ -659,8 +651,9 @@ function! s:ValidTerminal(term)
     return 0
   endif
 
+  " assumes that Terminal.app, or whatever the user may have set, is available
   if has('mac') && has('gui_running')
-  	return 1
+    return 1
   endif
 
   if has('win32unix')
@@ -672,6 +665,17 @@ function! s:ValidTerminal(term)
   endif
 
   return executable(a:term)
+endfunction " }}}
+
+" s:MacGuiCmd(cmd, term) {{{
+function! s:MacGuiCmd(cmd, term)
+  if a:term != '0'
+    return 'silent !osascript -e "tell application \"' . a:term .
+      \ '\"" -e "do script \"' . a:cmd . '\"" -e "end tell"'
+  endif
+
+  let cmd = substitute(a:cmd, '"', "'", 'g')
+  return 'silent !osascript -e "do shell script \"' . cmd . '\""'
 endfunction " }}}
 
 " s:CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) {{{
@@ -854,9 +858,9 @@ function s:screenGnuScreen.exec(cmd) dict " {{{
     exec 'silent! !' . cmd
     redraw!
   elseif has('mac') && has('gui_running')
-	let term = s:GetTerminal()
-	let result = ''
-	exec s:macGuiCmd(cmd, '0')
+    let term = s:GetTerminal()
+    let result = ''
+    exec s:macGuiCmd(cmd, '0')
   else " system() works for windows gvim too
     let result = system(cmd)
   endif
