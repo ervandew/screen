@@ -589,7 +589,7 @@ function! s:StartTerminal(command)
 
   elseif has('mac') && has('gui_running')
     let result = ''
-    exec s:macGuiCmd(a:command, terminal)
+    exec s:MacGuiCmd(a:command, terminal)
 
   " gnome-terminal needs quotes around the screen call, but konsole and
   " rxvt based terms (urxvt, aterm, mrxvt, etc.) don't work properly with
@@ -860,7 +860,7 @@ function s:screenGnuScreen.exec(cmd) dict " {{{
   elseif has('mac') && has('gui_running')
     let term = s:GetTerminal()
     let result = ''
-    exec s:macGuiCmd(cmd, '0')
+    exec s:MacGuiCmd(cmd, '0')
   else " system() works for windows gvim too
     let result = system(cmd)
   endif
