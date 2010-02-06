@@ -157,10 +157,10 @@ set cpo&vim
 
 function! s:macGuiCmd(cmd, term)
 	if a:term != '0'
-	  return '!osascript -e "tell application \"' . a:term . '\"" -e "do script \"' . a:cmd . '\"" -e "end tell"'
+	  return 'silent !osascript -e "tell application \"' . a:term . '\"" -e "do script \"' . a:cmd . '\"" -e "end tell"'
 	else
 	  let cmd = substitute(a:cmd, '"', "'", 'g')
-	  return '!osascript -e "do shell script \"' . cmd . '\""' 
+	  return 'silent !osascript -e "do shell script \"' . cmd . '\""' 
 endfunction
 
 " s:ScreenShell(cmd, orientation) {{{
