@@ -373,18 +373,6 @@ function! s:ScreenInit(cmd)
     endif
   endif
 
-  if !exists(':ScreenSend')
-    command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
-    let g:ScreenShellSend = s:ScreenSendFuncRef()
-    let g:ScreenShellFocus = s:ScreenFocusFuncRef()
-    " remove :ScreenShell command to avoid accidentally calling it again.
-    delcommand ScreenShell
-    delcommand ScreenShellAttach
-    if exists(':ScreenShellVertical')
-      delcommand ScreenShellVertical
-    endif
-  endif
-
   " use screen regions
   if !external
     let result = s:screen{g:ScreenImpl}.openRegion()
@@ -442,7 +430,20 @@ function! s:ScreenInit(cmd)
   endif
 
   if v:shell_error
+    delcommand ScreenQuit
     echoerr result
+  else
+    if !exists(':ScreenSend')
+      command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+      let g:ScreenShellSend = s:ScreenSendFuncRef()
+      let g:ScreenShellFocus = s:ScreenFocusFuncRef()
+      " remove :ScreenShell command to avoid accidentally calling it again.
+      delcommand ScreenShell
+      delcommand ScreenShellAttach
+      if exists(':ScreenShellVertical')
+        delcommand ScreenShellVertical
+      endif
+    endif
   endif
 endfunction " }}}
 
