@@ -451,7 +451,7 @@ function! s:ScreenQuit(onleave)
       let bufnum = bufnum + 1
     endwhile
   else
-    call s:ScreenShellCommands()
+    call screen#ScreenShellCommands()
     delcommand ScreenQuit
     delcommand ScreenSend
     unlet g:ScreenShellSend
