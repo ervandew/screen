@@ -827,15 +827,19 @@ function s:screenGnuScreen.sendTempBuffer(tmp) dict " {{{
     let result = self.exec(
       \ '-p ' . g:ScreenShellWindow .  ' -X eval ' .
       \ '"msgminwait 0" ' .
+      \ '"msgwait 0" ' .
       \ '"readbuf ' . a:tmp . '" ' .
       \ '"at ' . g:ScreenShellWindow . ' paste ." ' .
+      \ '"msgwait 5" ' .
       \ '"msgminwait 1"')
   else
     let result = self.exec(
       \ '-X eval ' .
       \ '"msgminwait 0" ' .
+      \ '"msgwait 0" ' .
       \ '"readbuf ' . a:tmp . '" ' .
       \ '"paste ." ' .
+      \ '"msgwait 5" ' .
       \ '"msgminwait 1"')
   endif
   return result
