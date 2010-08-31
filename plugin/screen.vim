@@ -111,7 +111,21 @@ set cpo&vim
 " Commands {{{
 
   if !exists(':ScreenShell')
-    call screen#ScreenShellCommands()
+    " unfortunately, to reap the benefits of an autoload scripts, we can't
+    " call this, but instead have to copy the commands inline.
+    "call screen#ScreenShellCommands()
+
+    command -nargs=? -complete=shellcmd ScreenShell
+      \ :call screen#ScreenShell('<args>', 'horizontal')
+    command -nargs=? -complete=customlist,screen#CommandCompleteScreenSessions
+      \ ScreenShellAttach :call screen#ScreenShellAttach('<args>')
+
+    if !has('gui_running') &&
+     \ !g:ScreenShellExternal &&
+     \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
+      command -nargs=? -complete=shellcmd ScreenShellVertical
+        \ :call screen#ScreenShell('<args>', 'vertical')
+    endif
   endif
 
 " }}}
