@@ -409,10 +409,11 @@ function! s:ScreenInit(cmd)
 
     else
       let result = s:screen{g:ScreenImpl}.newTerminal()
-      if has('win32') || has('win64') || has('win32unix') || has('mac')
+      "if has('win32') || has('win64') || has('win32unix') || has('mac')
         " like, the sleep hack below, but longer for windows.
+        " ok, so looks like this is needed for ubuntu as well... ugg.
         sleep 1000m
-      endif
+      "endif
 
       if !v:shell_error && result != '0'
         " Hack, but should be plenty of time to let screen get to a state
