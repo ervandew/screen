@@ -126,7 +126,8 @@ set cpo&vim
 
 " Commands {{{
 
-  if !exists(':ScreenShell')
+  " s:ScreenShellCommands() {{{
+  function! s:ScreenShellCommands()
     command -nargs=? -complete=shellcmd ScreenShell :call <SID>ScreenShell('<args>', 'horizontal')
     command -nargs=? -complete=customlist,s:CommandCompleteScreenSessions
       \ ScreenShellAttach :call <SID>ScreenShellAttach('<args>')
@@ -135,6 +136,10 @@ set cpo&vim
      \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
       command -nargs=? -complete=shellcmd ScreenShellVertical :call <SID>ScreenShell('<args>', 'vertical')
     endif
+  endfunction " }}}
+
+  if !exists(':ScreenShell')
+    call s:ScreenShellCommands()
   endif
 
 " }}}
@@ -535,9 +540,7 @@ function! s:ScreenQuit(onleave)
       let bufnum = bufnum + 1
     endwhile
   else
-    command -nargs=? ScreenShell :call <SID>ScreenShell('<args>')
-    command -nargs=? -complete=customlist,s:CommandCompleteScreenSessions
-      \ ScreenShellAttach :call <SID>ScreenShellAttach('<args>')
+    call s:ScreenShellCommands()
     delcommand ScreenQuit
     delcommand ScreenSend
     unlet g:ScreenShellSend
