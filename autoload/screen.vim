@@ -524,8 +524,8 @@ function! s:GetScreenSessions()
   let results = split(system('screen -wipe'), "\n")
   call filter(results, 'v:val =~ "(\\w\\+)"')
   call map(results, '[' .
-    \ 'substitute(v:val, "^\\s*\\(\\S*\\)\\s\\+(\\w\\+).*", "\\1", ""), ' .
-    \ 'tolower(substitute(v:val, "^\\s*\\S*\\s\\+(\\(\\w\\+\\)).*", "\\1", ""))]')
+    \ 'substitute(v:val, "^\\s*\\(\\S*\\).*", "\\1", ""), ' .
+    \ 'tolower(substitute(v:val, "(\\(\\w\\+\\))$", "\\1", ""))]')
   return results
 endfunction " }}}
 
