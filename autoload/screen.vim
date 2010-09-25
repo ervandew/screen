@@ -840,7 +840,7 @@ endfunction " }}}
 
 function s:screenTmux.openRegion() dict " {{{
   let orient = g:ScreenShellOrientation == 'vertical' ? '-h ' : ''
-  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' ; up-pane'
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' ; select-pane -U'
   let result = self.exec(
     \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
     \ 'rename-window ' . g:ScreenShellWindow .
@@ -884,7 +884,7 @@ function s:screenTmux.sendTempBuffer(tmp) dict " {{{
 endfunction " }}}
 
 function s:screenTmux.focus() dict " {{{
-  return self.exec('down-pane')
+  return self.exec('select-pane -D')
 endfunction " }}}
 
 function s:screenTmux.quit() dict " {{{
