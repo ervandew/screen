@@ -717,12 +717,21 @@ function s:screenGnuScreen.openRegion() dict " {{{
   endif
 
   let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' "focus up"'
-  return self.exec('-X eval ' .
+  let chdir = exists('g:ScreenShellBootstrapped') ? '' : '"chdir \"' . getcwd() . '\"" '
+  let result = self.exec('-X eval ' .
     \ '"' . splitcmd . '" ' .
     \ '"focus down" ' .
     \ '"resize ' . s:GetSize() . '" ' .
+    \ chdir .
     \ '"screen -t ' . g:ScreenShellWindow . '"' .
     \ focus)
+
+  " if we ran a chdir, reset it
+  if chdir != ''
+    call self.exec('-X eval "chdir"')
+  endif
+
+  return result
 endfunction " }}}
 
 function s:screenGnuScreen.setTitle() dict " {{{
