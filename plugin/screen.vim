@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 1.2
+" Version: 1.3
 " GetLatestVimScripts: 2711 1 :AutoInstall: screen.vim
 "
 " Description: {{{
