@@ -287,8 +287,7 @@ function! s:ScreenInit(cmd)
     let result = s:screen{g:ScreenImpl}.openRegion()
 
     if !v:shell_error && a:cmd != ''
-      let cmd = a:cmd . "\<cr>"
-      let result = s:screen{g:ScreenImpl}.send(cmd)
+      let result = s:screen{g:ScreenImpl}.send(a:cmd)
     endif
 
   " use an external terminal
@@ -311,18 +310,19 @@ function! s:ScreenInit(cmd)
         let result = s:screen{g:ScreenImpl}.newTerminalMulti()
 
         if !v:shell_error && result != '0' && a:cmd != ''
-          let cmd = a:cmd . "\<cr>"
-          let result = s:screen{g:ScreenImpl}.send(cmd)
+          let result = s:screen{g:ScreenImpl}.send(a:cmd)
         endif
       endif
 
     else
       let result = s:screen{g:ScreenImpl}.newTerminal()
-      "if has('win32') || has('win64') || has('win32unix') || has('mac')
+      if has('win32') || has('win64') || has('win32unix') || has('mac')
         " like, the sleep hack below, but longer for windows.
-        " ok, so looks like this is needed for ubuntu as well... ugg.
+        sleep 3000m
+      else
+        " looks like this is needed for ubuntu as well... ugg.
         sleep 1000m
-      "endif
+      endif
 
       if !v:shell_error && result != '0'
         " Hack, but should be plenty of time to let screen get to a state
@@ -332,8 +332,7 @@ function! s:ScreenInit(cmd)
 
         " execute the supplied command if any
         if !v:shell_error && a:cmd != ''
-          let cmd = a:cmd . "\<cr>"
-          let result = s:screen{g:ScreenImpl}.send(cmd)
+          let result = s:screen{g:ScreenImpl}.send(a:cmd)
         endif
       endif
     endif
@@ -739,7 +738,15 @@ function s:screenGnuScreen.setTitle() dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.send(value) dict " {{{
-  return self.exec('-p ' . g:ScreenShellWindow . ' -X stuff "' . a:value . '"')
+  let tmp = tempname()
+  call writefile([a:value], tmp)
+  try
+    let result = s:screen{g:ScreenImpl}.sendTempBuffer(tmp)
+  finally
+    call delete(tmp)
+  endtry
+  return result
+  "return self.exec('-p ' . g:ScreenShellWindow . ' -X stuff "' . a:value . '"')
 endfunction " }}}
 
 function s:screenGnuScreen.sendTempBuffer(tmp) dict " {{{
