@@ -131,10 +131,17 @@ function! screen#ScreenShellAttach(session)
 
   let g:ScreenShellSession = s:screen{g:ScreenImpl}.attachSession(a:session)
 
-  if g:ScreenShellSession != '0' && !exists(':ScreenSend')
-    command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
-    let g:ScreenShellSend = s:ScreenSendFuncRef()
-    let g:ScreenShellFocus = s:ScreenFocusFuncRef()
+  if g:ScreenShellSession != '0'
+    if !exists(':ScreenSend')
+      command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+      let g:ScreenShellSend = s:ScreenSendFuncRef()
+      let g:ScreenShellFocus = s:ScreenFocusFuncRef()
+    endif
+
+    if g:ScreenShellAttachTargetCurrent
+      let g:ScreenShellWindow = 'screenshell'
+      call s:screen{g:ScreenImpl}.setTitle()
+    endif
   endif
 endfunction " }}}
 

@@ -89,7 +89,7 @@ set cpo&vim
     let g:ScreenShellInitialFocus = 'vim'
   endif
 
-  " When g:ScreenShellExternal is set, this variable specifies the prefered
+  " When g:ScreenShellExternal is set, this variable specifies the preferred
   " shell to use.  If not set, some common terminals will be tried.
   if !exists('g:ScreenShellTerminal')
     let g:ScreenShellTerminal = ''
@@ -98,6 +98,12 @@ set cpo&vim
   " Sets whether, and using which method, gnu screen supports vertical splits
   if !exists('g:ScreenShellGnuScreenVerticalSupport')
     let g:ScreenShellGnuScreenVerticalSupport = ''
+  endif
+
+  " Sets whether the current screen region should be targeted when attaching
+  " to an existing screen session.
+  if !exists('g:ScreenShellAttachTargetCurrent')
+    let g:ScreenShellAttachTargetCurrent = 0
   endif
 
 " }}}

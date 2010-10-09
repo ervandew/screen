@@ -117,10 +117,14 @@ Below is a comprehensive list of the commands which screen.vim provides:
   first session found is used.  If the session is in the "Detached" state,
   then a new terminal is opened with a new screen instance attached to the
   session. Attaching to a detached session is not currently supported on
-  windows due to deficiencies in the cygwin version of gnu screen.  Also note,
-  that for screen sessions attached to via this mechanism, :ScreenSend
+  windows due to deficiencies in the cygwin version of gnu screen.
+  
+  Note: for screen sessions attached to via this mechanism, :ScreenSend
   invocations will send the text to the active screen window instead of
-  targeting the 'shell' window when used from :ScreenShell.
+  targeting the 'shell' window when used from :ScreenShell.  However, this
+  behavior can be configured via the g:ScreenShellAttachTargetCurrent
+  variable, which when non 0, will set the title on the currently focused gnu
+  screen window and target it for all send commands.
 
 :ScreenSend
   Send the visual selection or the entire buffer contents to the running gnu
