@@ -86,6 +86,16 @@ function! screen#ScreenShell(cmd, orientation)
 
   let g:ScreenShellOrientation = a:orientation
 
+  " Specifies a name to be supplied to vim's --servername arg when invoked in
+  " a new screen session.
+  if !exists('g:ScreenShellServerName')
+    " Perform this here so that g:ScreenShellExternal can be set after vim
+    " starts.
+    let s:servername = g:ScreenShellExternal ? '' : 'vim'
+  else
+    let s:servername = g:ScreenShellServerName
+  endif
+
   try
     let bootstrap = !has('gui_running') &&
       \ !exists('g:ScreenShellBootstrapped') &&
@@ -95,7 +105,7 @@ function! screen#ScreenShell(cmd, orientation)
     " then don't bootstrap
     if bootstrap
       if g:ScreenShellExternal &&
-       \ (g:ScreenShellServerName == '' || g:ScreenImpl == 'Tmux' ||
+       \ (s:servername == '' || g:ScreenImpl == 'Tmux' ||
        \  !has('clientserver') || has('win32') || has('win64'))
         let bootstrap = 0
       endif
@@ -187,8 +197,8 @@ function! s:ScreenBootstrap(cmd)
 
     " supply a servername when starting vim if supported
     let server = ''
-    if has('clientserver') && g:ScreenShellServerName != ''
-      let server = '--servername "' . g:ScreenShellServerName . '" '
+    if has('clientserver') && s:servername != ''
+      let server = '--servername "' . s:servername . '" '
     endif
 
     " when transitioning from windows console vim to cygwin vim, we don't know

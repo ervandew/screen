@@ -89,12 +89,6 @@ set cpo&vim
     let g:ScreenShellInitialFocus = 'vim'
   endif
 
-  " Specifies a name to be supplied to vim's --servername arg when invoked in
-  " a new screen session.
-  if !exists('g:ScreenShellServerName')
-    let g:ScreenShellServerName = g:ScreenShellExternal ? '' : 'vim'
-  endif
-
   " When g:ScreenShellExternal is set, this variable specifies the prefered
   " shell to use.  If not set, some common terminals will be tried.
   if !exists('g:ScreenShellTerminal')
