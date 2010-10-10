@@ -84,7 +84,7 @@ function! screen#ScreenShell(cmd, orientation)
     return
   endif
 
-  let g:ScreenShellOrientation = a:orientation
+  let s:orientation = a:orientation
 
   " Specifies a name to be supplied to vim's --servername arg when invoked in
   " a new screen session.
@@ -547,7 +547,7 @@ endfunction " }}}
 
 " s:GetSize() {{{
 function! s:GetSize()
-  if g:ScreenShellOrientation == 'vertical'
+  if s:orientation == 'vertical'
     let size = g:ScreenShellWidth
     let sizefunc = 'winwidth'
   else
@@ -685,7 +685,7 @@ function s:screenGnuScreen.attachSession(session) dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.bootstrap(server, sessionfile, cmd) dict " {{{
-  let vertical = g:ScreenShellOrientation == 'vertical' ? 'Vertical' : ''
+  let vertical = s:orientation == 'vertical' ? 'Vertical' : ''
   exec 'silent! !screen -S ' . g:ScreenShellSession .
     \ ' vim ' . a:server .
     \ '-c "silent source ' . escape(a:sessionfile, ' ') . '" ' .
@@ -717,7 +717,7 @@ endfunction " }}}
 
 function s:screenGnuScreen.openRegion() dict " {{{
   let splitcmd = 'split'
-  if g:ScreenShellOrientation == 'vertical'
+  if s:orientation == 'vertical'
     if g:ScreenShellGnuScreenVerticalSupport == 'patch'
       let splitcmd = 'vert_split'
     elseif g:ScreenShellGnuScreenVerticalSupport == 'native'
@@ -728,7 +728,7 @@ function s:screenGnuScreen.openRegion() dict " {{{
         \ g:ScreenShellGnuScreenVerticalSupport . '". ' .
         \ 'Supported values included "patch" or "native".'
       echohl Normal
-      let g:ScreenShellOrientation = ''
+      let s:orientation = ''
     endif
   endif
 
@@ -845,7 +845,7 @@ function s:screenTmux.attachSession(session) dict " {{{
 endfunction " }}}
 
 function s:screenTmux.bootstrap(server, sessionfile, cmd) dict " {{{
-  let vertical = g:ScreenShellOrientation == 'vertical' ? 'Vertical' : ''
+  let vertical = s:orientation == 'vertical' ? 'Vertical' : ''
   exec printf('silent! !tmux %s -S %s new-session ' .
     \ '"vim %s -c \"silent source %s\" -c \"ScreenShell' . vertical . ' %s\""',
     \ g:ScreenShellTmuxInitArgs, g:ScreenShellSession,
@@ -872,8 +872,8 @@ function s:screenTmux.newWindow(focus) dict " {{{
 endfunction " }}}
 
 function s:screenTmux.openRegion() dict " {{{
-  let orient = g:ScreenShellOrientation == 'vertical' ? '-h ' : ''
-  let direction = g:ScreenShellOrientation == 'vertical' ? '-U ' : '-L'
+  let orient = s:orientation == 'vertical' ? '-h ' : ''
+  let direction = s:orientation == 'vertical' ? '-L ' : '-U'
   let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane ' . direction)
   let result = self.exec(
     \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
