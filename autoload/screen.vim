@@ -873,7 +873,8 @@ endfunction " }}}
 
 function s:screenTmux.openRegion() dict " {{{
   let orient = g:ScreenShellOrientation == 'vertical' ? '-h ' : ''
-  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : ' ; select-pane -U'
+  let direction = g:ScreenShellOrientation == 'vertical' ? '-U ' : '-L'
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane ' . direction)
   let result = self.exec(
     \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
     \ 'rename-window ' . g:ScreenShellWindow .
