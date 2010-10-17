@@ -763,7 +763,6 @@ function s:screenGnuScreen.send(value) dict " {{{
     call delete(tmp)
   endtry
   return result
-  "return self.exec('-p ' . g:ScreenShellWindow . ' -X stuff "' . a:value . '"')
 endfunction " }}}
 
 function s:screenGnuScreen.sendTempBuffer(tmp) dict " {{{
@@ -889,11 +888,14 @@ function s:screenTmux.setTitle() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.send(value) dict " {{{
-  let result = self.focusWindow()
-  if v:shell_error
-    return result
-  endif
-  return self.exec(printf('set-buffer "%s" ; paste-buffer', a:value))
+  let tmp = tempname()
+  call writefile([a:value], tmp)
+  try
+    let result = s:screen{g:ScreenImpl}.sendTempBuffer(tmp)
+  finally
+    call delete(tmp)
+  endtry
+  return result
 endfunction " }}}
 
 function s:screenTmux.sendTempBuffer(tmp) dict " {{{
