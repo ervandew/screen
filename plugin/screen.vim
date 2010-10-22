@@ -106,6 +106,12 @@ set cpo&vim
     let g:ScreenShellAttachTargetCurrent = 0
   endif
 
+  " Sets whether tabs should be expand to prevent completion attempts by the
+  " target application when sending text to it.
+  if !exists('g:ScreenShellExpandTabs')
+    let g:ScreenShellExpandTabs = 0
+  endif
+
 " }}}
 
 " Commands {{{

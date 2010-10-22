@@ -415,6 +415,16 @@ function! s:ScreenSend(...)
     return
   endif
 
+  if g:ScreenShellExpandTabs
+    let expanded = ''
+    let index = 0
+    while index < &shiftwidth
+      let expanded .= ' '
+      let index += 1
+    endwhile
+    call map(lines, 'substitute(v:val, "\\t", expanded, "g")')
+  endif
+
   let tmp = tempname()
   call writefile(lines, tmp)
   try

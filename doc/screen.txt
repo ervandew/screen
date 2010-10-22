@@ -118,7 +118,7 @@ Below is a comprehensive list of the commands which screen.vim provides:
   then a new terminal is opened with a new screen instance attached to the
   session. Attaching to a detached session is not currently supported on
   windows due to deficiencies in the cygwin version of gnu screen.
-  
+
   Note: for screen sessions attached to via this mechanism, :ScreenSend
   invocations will send the text to the active screen window instead of
   targeting the 'shell' window when used from :ScreenShell.  However, this
@@ -228,6 +228,17 @@ When g:ScreenShellExternal is enabled or you are running gvim, this value will
 be used as the name of the terminal executable to be used.  If this value is
 empty, a list of common terminals will be tried until one is found.
 
+
+Expand Tabs                                 *screen-expandtabs*
+                                            *g:ScreenShellExpandTabs*
+
+g:ScreenShellExpandTabs (default value: 0)
+
+When sending text from vim to an external program, that program may interpret
+tabs as an attempt to perform completion resulting in the text sent not
+performing the function you intended.  As a work around, you can set this
+setting to a non 0 value resulting in all tabs being expanded to spaces before
+sending the text to screen/tmux.
 
 ==============================================================================
 4. Script Integration                       *screen-scriptintegration*
