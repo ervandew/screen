@@ -53,6 +53,8 @@ set cpo&vim
 
 " Global Variables {{{
 
+  let g:ScreenVersion = '1.3'
+
   if !exists('g:ScreenImpl')
     let g:ScreenImpl = 'GnuScreen'
     "let g:ScreenImpl = 'Tmux'
