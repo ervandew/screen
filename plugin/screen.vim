@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 1.3
+" Version: 1.4
 " GetLatestVimScripts: 2711 1 :AutoInstall: screen.vim
 "
 " Description: {{{
@@ -14,7 +14,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2009 - 2010
+"   Copyright (c) 2009 - 2011
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -53,7 +53,9 @@ set cpo&vim
 
 " Global Variables {{{
 
-  let g:ScreenVersion = '1.3'
+  let g:ScreenVersion = '1.4'
+  let g:ScreenShellActive = 0
+  let g:ScreenShellCmd = ''
 
   if !exists('g:ScreenImpl')
     let g:ScreenImpl = 'GnuScreen'

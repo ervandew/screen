@@ -1,7 +1,7 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 "
 " License: {{{
-"   Copyright (c) 2009 - 2010
+"   Copyright (c) 2009 - 2011
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -369,6 +369,14 @@ function! s:ScreenInit(cmd)
       if exists(':ScreenShellVertical')
         delcommand ScreenShellVertical
       endif
+
+      " Hook for creating keybindings (or similar)
+      let g:ScreenShellActive = 1
+      let g:ScreenShellCmd = a:cmd
+      try
+        doautoall ScreenShellEnter User
+      catch /E216/
+      endtry
     endif
   endif
 endfunction " }}}
@@ -485,6 +493,14 @@ function! s:ScreenQuit(onleave)
     augroup screen_shell
       autocmd!
     augroup END
+
+    " Hook for creating keybindings (or similar)
+    let g:ScreenShellActive = 0
+    let g:ScreenShellCmd = ''
+    try
+      doautoall ScreenShellExit User
+    catch /E216/
+    endtry
   endif
 
   let result = s:screen{g:ScreenImpl}.quit()

@@ -5,28 +5,29 @@ Author: Eric Van Dewoestine <ervandew@gmail.com>
 This plugin is licensed under the terms of the BSD License.  Please see
 screen.vim for the license in its entirety.
 
-==============================================================================
+-----------------------------------------------------------------------------
 Screen                                      *screen*
 
-1. Introduction                         |screen-intro|
-2. Screen Usage                         |screen-usage|
-     :ScreenShell                       |screen-shell|
-     :ScreenShellAttach                 |screen-shellattach|
-     :ScreenSend                        |screen-send|
-     :ScreenQuit                        |screen-quit|
-3. Screen Options                       |screen-options|
-     Terminal muliplexer                |screen-impl|
-     Shell height                       |screen-shellheight|
-     Quit on exit                       |screen-quitonexit|
-     External shell                     |screen-externalshell|
-     Server name                        |screen-servername|
-     Terminal                           |screen-terminal|
-4. Script integration                   |screen-scriptintegration|
-5. Gotchas                              |screen-gotchas|
-6. Troubleshooting                      |screen-troubleshooting|
+Introduction                         |screen-intro|
+Screen Usage                         |screen-usage|
+  :ScreenShell                       |screen-shell|
+  :ScreenShellAttach                 |screen-shellattach|
+  :ScreenSend                        |screen-send|
+  :ScreenQuit                        |screen-quit|
+Screen Options                       |screen-options|
+  Terminal muliplexer                |screen-impl|
+  Shell height                       |screen-shellheight|
+  Quit on exit                       |screen-quitonexit|
+  External shell                     |screen-externalshell|
+  Server name                        |screen-servername|
+  Terminal                           |screen-terminal|
+Custom mappings                      |screen-mappings|
+Script integration                   |screen-scriptintegration|
+Gotchas                              |screen-gotchas|
+Troubleshooting                      |screen-troubleshooting|
 
-==============================================================================
-1. Introduction                             *screen-intro*
+-----------------------------------------------------------------------------
+Introduction                                *screen-intro*
 
 This plugin aims to simulate an embedded shell in vim by allowing you to
 easily convert your current vim session into one running in gnu screen with a
@@ -50,8 +51,8 @@ screen.  To use tmux simply add the following to your vimrc:
 Windows Users: Whether you are using gvim or not, you will need cygwin
 installed with cygwin's bin directory in your windows PATH.
 
-==============================================================================
-2. Supertab usage                           *screen-usage*
+-----------------------------------------------------------------------------
+Screen usage                                *screen-usage*
 
 Here is a sample workflow utilizing screen.vim to execute some python code in
 the python interactive interpreter:
@@ -141,8 +142,8 @@ Below is a comprehensive list of the commands which screen.vim provides:
     well (configurable via g:ScreenShellQuitOnVimExit).
 
 
-==============================================================================
-3. Screen Options                           *screen-options*
+-----------------------------------------------------------------------------
+Screen Options                              *screen-options*
 
 Screen is configured via several global variables that you can set in your
 |vimrc| file according to your needs. Below is a comprehensive list of the
@@ -240,37 +241,105 @@ performing the function you intended.  As a work around, you can set this
 setting to a non 0 value resulting in all tabs being expanded to spaces before
 sending the text to screen/tmux.
 
-==============================================================================
-4. Script Integration                       *screen-scriptintegration*
+-----------------------------------------------------------------------------
+Custom Mappings                             *screen-mappings*
+
+Defining custom key mappings for for screen.vim can be accomplished like with
+any other plugin: >
+  nmap <C-c><C-c> :ScreenShell<cr>
+>
+
+But you may want to have different mappings depending on the whether you have
+an active screen shell open or not. For this case screen.vim provides a couple
+autocmd groups which you can use to listen for entering or exiting of a screen
+shell session.  Here is an example which sets some global key bindings based
+on the screen shell state: >
+
+  function! s:ScreenShellListener()
+    if g:ScreenShellActive
+      nmap <C-c><C-c> :ScreenSend<cr>
+      nmap <C-c><C-x> :ScreenQuit<cr>
+    else
+      nmap <C-c><C-c> :ScreenShell<cr>
+    endif
+  endfunction
+
+  nmap <C-c><C-c> :ScreenShell<cr>
+  augroup ScreenShellEnter
+    autocmd User * call <SID>ScreenShellListener()
+  augroup END
+  augroup ScreenShellExit
+    autocmd User * call <SID>ScreenShellListener()
+  augroup END
+>
+
+You can also take this a step further and do the same as the above, but do so
+on a per filetype basis, where the key binding are buffer local and interact
+with the filetype's associated interpreter. Here is an example which can be
+put in a python ftplugin: >
+
+  function! s:ScreenShellListener()
+    if g:ScreenShellActive
+      if g:ScreenShellCmd == 'python'
+        nmap <buffer> <C-c><C-c> :ScreenSend<cr>
+      else
+        nmap <buffer> <C-c><C-c> <Nop>
+      endif
+    else
+      nmap <buffer> <C-c><C-c> :ScreenShell python<cr>
+    endif
+  endfunction
+
+  call s:ScreenShellListener()
+  augroup ScreenShellEnter
+    autocmd User *.py call <SID>ScreenShellListener()
+  augroup END
+  augroup ScreenShellExit
+    autocmd User *.py call <SID>ScreenShellListener()
+  augroup END
+>
+
+Note how the :ScreenShell mapping starts the python interpreter. Before
+mapping the :ScreenSend command, the function also checks if the shell was
+started with the 'python' command, allowing you to unmap (<Nop> in this case
+to counter act any global defined mapping) the send command if some other
+shell command is running (irb, lisp interpreter, etc).
+
+-----------------------------------------------------------------------------
+Script Integration                          *screen-scriptintegration*
 
 To permit integration with your own, or 3rd party, scripts, a funcref is made
 globally available while the screen shell mode is enabled, allowing you to
 send your own strings to the attached shell.
 
-Here are some examples of using this funcref to send some commands to bash:
+Here are some examples of using this funcref to send some commands to bash: >
   :call ScreenShellSend("echo foo\necho bar")
   :call ScreenShellSend('echo -e "foo\nbar"')
   :call ScreenShellSend("echo -e \"foo\\nbar\"")
+>
 
-Sending a list of strings is also supported:
+Sending a list of strings is also supported: >
   :call ScreenShellSend(["echo foo", "echo bar"])
+>
 
-You can test that the funcref exists using:
+You can test that the funcref exists using: >
    exists('ScreenShellSend')
+>
 
 In addition to sending text to the screen shell, another funcref is available
 allowing you to focus the shell region in screen.  Note: focusing an external
 screen shell is not supported.
 
-To focus the shell region from vim you can invoke the funcref like so:
+To focus the shell region from vim you can invoke the funcref like so: >
   :call ScreenShellFocus()
+>
 
 This will focus the bottom most region which is expected to be the one running
 your shell or other program.
 
 
-==============================================================================
-5. Gotchas                                  *screen-gotchas*
+-----------------------------------------------------------------------------
+Gotchas                                     *screen-gotchas*
 
 While running vim in gnu screen, if you detach the session instead of
 quitting, then when returning to the non-screen vim, vim will complain about
@@ -281,8 +350,8 @@ so when running :ScreenShell some buffers may not load correctly if they are
 backed by such a plugin.
 
 
-==============================================================================
-5. Troubleshooting                          *screen-troubleshooting*
+-----------------------------------------------------------------------------
+Troubleshooting                             *screen-troubleshooting*
 
 Below are a list of possible issues you may encounter and some info on
 resolving those issues.
