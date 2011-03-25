@@ -954,19 +954,27 @@ function s:screenTmux.quit() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.exec(cmd) dict " {{{
-  let cmd = 'tmux '
+  let tmux = 'tmux '
+  let cmd = a:cmd
 
   if exists('g:ScreenShellSession')
-    let cmd .= '-S ' . g:ScreenShellSession . ' '
+    let tmux .= '-S ' . g:ScreenShellSession . ' '
   endif
 
-  return system(cmd . escape(a:cmd, ';'))
+  " hack to account for apparent bug in tmux when redirecting stdout to a file
+  " when attempting to list windows
+  if cmd =~ 'list-windows'
+    let cmd .= ' | cat'
+  endif
+
+  return system(tmux . escape(cmd, ';'))
 endfunction " }}}
 
 function s:screenTmux.focusWindow() dict " {{{
   if !exists('g:ScreenShellWindow')
     return
   endif
+
   let result = self.exec('list-windows')
   if v:shell_error
     return result
