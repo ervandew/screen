@@ -931,14 +931,14 @@ function s:screenTmux.sendTempBuffer(tmp) dict " {{{
   endif
 
   " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
-  if exists('g:ScreenShellBootstrapped')
+  if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
     call self.exec('select-pane -t 1')
   endif
   let result = self.exec(printf(
     \ 'load-buffer %s ; ' .
     \ 'paste-buffer', a:tmp
     \ ))
-  if exists('g:ScreenShellBootstrapped')
+  if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
     call self.exec('select-pane -t 0')
   endif
 
