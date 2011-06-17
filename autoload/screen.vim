@@ -72,10 +72,10 @@ endfunction " }}}
 " ScreenShell(cmd, orientation) {{{
 " Open a split shell.
 function! screen#ScreenShell(cmd, orientation)
-  if g:ScreenImpl != 'GnuScreen' && g:ScreenImpl != 'Tmux'
+  if g:ScreenImpl !~ '^\(Conque\|GnuScreen\|Tmux\)$'
     echohl WarningMsg
     echom 'Unsupported g:ScreenImpl value "' . g:ScreenImpl . '".  ' .
-      \ 'Supported values included "GnuScreen" or "Tmux".'
+      \ 'Supported values included "GnuScreen", "Tmux", or "Conque".'
     echohl Normal
     return
   endif
@@ -97,7 +97,9 @@ function! screen#ScreenShell(cmd, orientation)
   endif
 
   try
-    let bootstrap = !has('gui_running') &&
+    let bootstrap =
+      \ g:ScreenImpl =~ 'GnuScreen\|Tmux' &&
+      \ !has('gui_running') &&
       \ !exists('g:ScreenShellBootstrapped') &&
       \ expand('$TERM') !~ '^screen'
 
@@ -283,29 +285,24 @@ function! s:ScreenInit(cmd)
   "  let g:ScreenShellWindow = s:ScreenCmdName(a:cmd)[:15]
   "endif
 
-  " when already running in a screen session, never use an external shell
-  let external = !exists('g:ScreenShellBootstrapped') &&
-        \ expand('$TERM') =~ '^screen' ? 0 : g:ScreenShellExternal
-  " w/ gvim always use an external shell
-  let external = has('gui_running') ? 1 : external
+  let external = 0
+  let owner = ''
+  if g:ScreenImpl =~ 'GnuScreen\|Tmux'
+    " when already running in a screen session, never use an external shell
+    let external = !exists('g:ScreenShellBootstrapped') &&
+          \ expand('$TERM') =~ '^screen' ? 0 : g:ScreenShellExternal
+    " w/ gvim always use an external shell
+    let external = has('gui_running') ? 1 : external
+  endif
 
-  if exists('g:ScreenShellBootstrapped') || external
-    command -nargs=0 ScreenQuit :call <SID>ScreenQuit(0)
-    if g:ScreenShellQuitOnVimExit
-      augroup screen_shell
-        autocmd!
-        autocmd VimLeave * call <SID>ScreenQuit(1)
-      augroup END
-    endif
+  if exists('g:ScreenShellBootstrapped')
+    let owner = 'session'
   endif
 
   " use screen regions
   if !external
-    let result = s:screen{g:ScreenImpl}.openRegion()
-
-    if !v:shell_error && a:cmd != ''
-      let result = s:screen{g:ScreenImpl}.send(a:cmd)
-    endif
+    let result = s:screen{g:ScreenImpl}.openRegion(a:cmd)
+    let owner = 'region'
 
   " use an external terminal
   else
@@ -322,6 +319,7 @@ function! s:ScreenInit(cmd)
      \ g:ScreenImpl != 'Tmux'
 
       let result = s:screen{g:ScreenImpl}.newWindow(0)
+      let owner = 'window'
 
       if !v:shell_error
         let result = s:screen{g:ScreenImpl}.newTerminalMulti()
@@ -333,6 +331,8 @@ function! s:ScreenInit(cmd)
 
     else
       let result = s:screen{g:ScreenImpl}.newTerminal()
+      let owner = 'terminal'
+
       if has('win32') || has('win64') || has('win32unix') || has('mac')
         " like, the sleep hack below, but longer for windows.
         sleep 3000m
@@ -356,11 +356,21 @@ function! s:ScreenInit(cmd)
   endif
 
   if v:shell_error
-    delcommand ScreenQuit
+    if exists(':ScreenQuit')
+      delcommand ScreenQuit
+    endif
     echoerr result
   else
     if !exists(':ScreenSend')
       command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
+      exec "command -nargs=0 ScreenQuit :call <SID>ScreenQuit('" . owner . "', 0)"
+      if g:ScreenShellQuitOnVimExit
+        augroup screen_shell
+          autocmd!
+          exec "autocmd VimLeave * call <SID>ScreenQuit('" . owner . "', 1)"
+        augroup END
+      endif
+
       let g:ScreenShellSend = s:ScreenSendFuncRef()
       let g:ScreenShellFocus = s:ScreenFocusFuncRef()
       " remove :ScreenShell command to avoid accidentally calling it again.
@@ -433,13 +443,7 @@ function! s:ScreenSend(...)
     call map(lines, 'substitute(v:val, "\\t", expanded, "g")')
   endif
 
-  let tmp = tempname()
-  call writefile(lines, tmp)
-  try
-    let result = s:screen{g:ScreenImpl}.sendTempBuffer(tmp)
-  finally
-    call delete(tmp)
-  endtry
+  let result = s:screen{g:ScreenImpl}.send(lines)
 
   if v:shell_error
     echoerr result
@@ -467,10 +471,10 @@ function! s:ScreenFocusFuncRef()
   return function(printf('<SNR>%s_ScreenFocus', sid))
 endfun " }}}
 
-" s:ScreenQuit(onleave) {{{
+" s:ScreenQuit(owner, onleave) {{{
 " Quit the current screen session (short cut to manually quiting vim and
 " closing all screen windows.
-function! s:ScreenQuit(onleave)
+function! s:ScreenQuit(owner, onleave)
   if exists('g:ScreenShellBootstrapped')
     if !a:onleave
       wa
@@ -503,7 +507,14 @@ function! s:ScreenQuit(onleave)
     endtry
   endif
 
-  let result = s:screen{g:ScreenImpl}.quit()
+  let result = ''
+  if exists('g:ScreenShellBootstrapped') ||
+   \ a:owner == 'session' ||
+   \ a:owner == 'terminal'
+    let result = s:screen{g:ScreenImpl}.quit()
+  elseif a:owner == 'region' || a:owner == 'window'
+    let result = s:screen{g:ScreenImpl}.close(a:owner)
+  endif
 
   if v:shell_error
     if result !~ 'No screen session found'
@@ -698,7 +709,7 @@ function s:screenGnuScreen.attachSession(session) dict " {{{
         \ 'of gnu screen.'
       return
     endif
-    let result = s:screen{g:ScreenImpl}.newTerminalResume()
+    let result = self.newTerminalResume()
     if result == '0'
       return
     endif
@@ -741,7 +752,7 @@ function s:screenGnuScreen.newWindow(focus) dict " {{{
     \ a:focus ? '""' : '"other"'))
 endfunction " }}}
 
-function s:screenGnuScreen.openRegion() dict " {{{
+function s:screenGnuScreen.openRegion(cmd) dict " {{{
   let splitcmd = 'split'
   if s:orientation == 'vertical'
     if g:ScreenShellGnuScreenVerticalSupport == 'patch'
@@ -773,6 +784,10 @@ function s:screenGnuScreen.openRegion() dict " {{{
     call self.exec('-X eval "chdir"')
   endif
 
+  if !v:shell_error && a:cmd != ''
+    let result = self.send(a:cmd)
+  endif
+
   return result
 endfunction " }}}
 
@@ -781,41 +796,46 @@ function s:screenGnuScreen.setTitle() dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.send(value) dict " {{{
+  let lines = type(a:value) == 3 ? a:value : [a:value]
   let tmp = tempname()
-  call writefile([a:value], tmp)
+  call writefile(lines, tmp)
   try
-    let result = s:screen{g:ScreenImpl}.sendTempBuffer(tmp)
+    if exists('g:ScreenShellWindow')
+      let result = self.exec(
+        \ '-p ' . g:ScreenShellWindow .  ' -X eval ' .
+        \ '"msgminwait 0" ' .
+        \ '"msgwait 0" ' .
+        \ '"readbuf ' . tmp . '" ' .
+        \ '"at ' . g:ScreenShellWindow . ' paste ." ' .
+        \ '"msgwait 5" ' .
+        \ '"msgminwait 1"')
+    else
+      let result = self.exec(
+        \ '-X eval ' .
+        \ '"msgminwait 0" ' .
+        \ '"msgwait 0" ' .
+        \ '"readbuf ' . tmp . '" ' .
+        \ '"paste ." ' .
+        \ '"msgwait 5" ' .
+        \ '"msgminwait 1"')
+    endif
   finally
     call delete(tmp)
   endtry
   return result
 endfunction " }}}
 
-function s:screenGnuScreen.sendTempBuffer(tmp) dict " {{{
-  if exists('g:ScreenShellWindow')
-    let result = self.exec(
-      \ '-p ' . g:ScreenShellWindow .  ' -X eval ' .
-      \ '"msgminwait 0" ' .
-      \ '"msgwait 0" ' .
-      \ '"readbuf ' . a:tmp . '" ' .
-      \ '"at ' . g:ScreenShellWindow . ' paste ." ' .
-      \ '"msgwait 5" ' .
-      \ '"msgminwait 1"')
-  else
-    let result = self.exec(
-      \ '-X eval ' .
-      \ '"msgminwait 0" ' .
-      \ '"msgwait 0" ' .
-      \ '"readbuf ' . a:tmp . '" ' .
-      \ '"paste ." ' .
-      \ '"msgwait 5" ' .
-      \ '"msgminwait 1"')
-  endif
-  return result
-endfunction " }}}
-
 function s:screenGnuScreen.focus() dict " {{{
   return self.exec('-X focus bottom')
+endfunction " }}}
+
+function s:screenGnuScreen.close(type) dict " {{{
+  call self.focus()
+  if a:type == 'region'
+    call self.exec('-X kill')
+    return self.exec('-X remove')
+  endif
+  return self.exec('-X kill')
 endfunction " }}}
 
 function s:screenGnuScreen.quit() dict " {{{
@@ -896,7 +916,7 @@ function s:screenTmux.newWindow(focus) dict " {{{
   return self.exec('new-window -n ' . g:ScreenShellWindow . (a:focus ? '' : ' -d'))
 endfunction " }}}
 
-function s:screenTmux.openRegion() dict " {{{
+function s:screenTmux.openRegion(cmd) dict " {{{
   let orient = s:orientation == 'vertical' ? '-h ' : ''
   let direction = s:orientation == 'vertical' ? '-L ' : '-U'
   let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane ' . direction)
@@ -904,6 +924,11 @@ function s:screenTmux.openRegion() dict " {{{
     \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
     \ 'rename-window ' . g:ScreenShellWindow .
     \ focus)
+
+  if !v:shell_error && a:cmd != ''
+    let result = self.send(a:cmd)
+  endif
+
   if v:shell_error
     return result
   endif
@@ -914,34 +939,29 @@ function s:screenTmux.setTitle() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.send(value) dict " {{{
+  let lines = type(a:value) == 3 ? a:value : [a:value]
   let tmp = tempname()
-  call writefile([a:value], tmp)
+  call writefile(lines, tmp)
   try
-    let result = s:screen{g:ScreenImpl}.sendTempBuffer(tmp)
+    let result = self.focusWindow()
+    if v:shell_error
+      return result
+    endif
+
+    " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
+    if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
+      call self.exec('select-pane -t 1')
+    endif
+    let result = self.exec(printf(
+      \ 'load-buffer %s ; ' .
+      \ 'paste-buffer', tmp
+      \ ))
+    if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
+      call self.exec('select-pane -t 0')
+    endif
   finally
     call delete(tmp)
   endtry
-  return result
-endfunction " }}}
-
-function s:screenTmux.sendTempBuffer(tmp) dict " {{{
-  let result = self.focusWindow()
-  if v:shell_error
-    return result
-  endif
-
-  " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
-  if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
-    call self.exec('select-pane -t 1')
-  endif
-  let result = self.exec(printf(
-    \ 'load-buffer %s ; ' .
-    \ 'paste-buffer', a:tmp
-    \ ))
-  if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
-    call self.exec('select-pane -t 0')
-  endif
-
   return result
 endfunction " }}}
 
@@ -951,6 +971,11 @@ endfunction " }}}
 
 function s:screenTmux.quit() dict " {{{
   return self.exec('kill-session')
+endfunction " }}}
+
+function s:screenTmux.close(type) dict " {{{
+  call self.focus()
+  return self.exec('kill-pane')
 endfunction " }}}
 
 function s:screenTmux.exec(cmd) dict " {{{
@@ -987,6 +1012,45 @@ function s:screenTmux.focusWindow() dict " {{{
     let window = substitute(windows[0], '^\s*\(\d\+\):.*', '\1', '')
     return self.exec('select-window -t:' . window)
   endif
+endfunction " }}}
+
+let s:screenConque = {}
+
+function s:screenConque.isValid() dict " {{{
+  if !exists(':ConqueTerm')
+    echoerr 'The conque plugin does not appear to be loaded'
+    return 0
+  endif
+
+  return 1
+endfunction " }}}
+
+function s:screenConque.openRegion(cmd) dict " {{{
+  " without this, the conque behavior isn't very useful
+  let g:ConqueTerm_ReadUnfocused = 1
+
+  let split = s:orientation == 'vertical' ? 'bot vsplit' : 'bot split'
+  let remain = g:ScreenShellInitialFocus == 'vim' ? 1 : 0
+  let cmd = a:cmd != '' ? a:cmd : 'bash'
+
+  call conque_term#open(cmd, [split], remain)
+
+  " maybe a bug with conque, bug the cmd output doesn't seem to start until
+  " insert mode is entered.
+  startinsert
+endfunction " }}}
+
+function s:screenConque.send(value) dict " {{{
+  let lines = type(a:value) == 3 ? a:value : [a:value]
+
+  let term = conque_term#get_instance()
+  for line in lines
+    call term.writeln(line)
+  endfor
+endfunction " }}}
+
+function s:screenConque.quit() dict " {{{
+  call conque_term#get_instance().close()
 endfunction " }}}
 
 let &cpo = s:save_cpo
