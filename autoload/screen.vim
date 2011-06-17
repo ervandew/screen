@@ -72,10 +72,10 @@ endfunction " }}}
 " ScreenShell(cmd, orientation) {{{
 " Open a split shell.
 function! screen#ScreenShell(cmd, orientation)
-  if g:ScreenImpl !~ '^\(Conque\|GnuScreen\|Tmux\)$'
+  if g:ScreenImpl !~ '^\(GnuScreen\|Tmux\)$'
     echohl WarningMsg
     echom 'Unsupported g:ScreenImpl value "' . g:ScreenImpl . '".  ' .
-      \ 'Supported values included "GnuScreen", "Tmux", or "Conque".'
+      \ 'Supported values included "GnuScreen" or "Tmux".'
     echohl Normal
     return
   endif
