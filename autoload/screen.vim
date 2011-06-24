@@ -943,14 +943,9 @@ function s:screenTmux.send(value) dict " {{{
   let tmp = tempname()
   call writefile(lines, tmp)
   try
-    let result = self.focusWindow()
+    let result = self.focus()
     if v:shell_error
       return result
-    endif
-
-    " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
-    if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
-      call self.exec('select-pane -t 1')
     endif
     let result = self.exec(printf(
       \ 'load-buffer %s ; ' .
@@ -966,7 +961,31 @@ function s:screenTmux.send(value) dict " {{{
 endfunction " }}}
 
 function s:screenTmux.focus() dict " {{{
-  return self.exec('select-pane -D')
+  if !exists('g:ScreenShellWindow')
+    return
+  endif
+
+  let result = self.exec('list-windows')
+  if v:shell_error
+    return result
+  endif
+
+  let windows = filter(
+    \ split(result, "\n"),
+    \ 'v:val =~ "^\\s*\\d\\+:\\s\\+' . g:ScreenShellWindow . '"')
+  if len(windows)
+    let window = substitute(windows[0], '^\s*\(\d\+\):.*', '\1', '')
+    let result = self.exec('select-window -t:' . window)
+    if v:shell_error
+      return result
+    endif
+  endif
+
+  " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
+  if !g:ScreenShellExternal
+    let result = self.exec('select-pane -t 1')
+  endif
+  return result
 endfunction " }}}
 
 function s:screenTmux.quit() dict " {{{
@@ -974,7 +993,10 @@ function s:screenTmux.quit() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.close(type) dict " {{{
-  call self.focus()
+  let result = self.focus()
+  if v:shell_error
+    return result
+  endif
   return self.exec('kill-pane')
 endfunction " }}}
 
@@ -993,25 +1015,6 @@ function s:screenTmux.exec(cmd) dict " {{{
   endif
 
   return system(tmux . escape(cmd, ';'))
-endfunction " }}}
-
-function s:screenTmux.focusWindow() dict " {{{
-  if !exists('g:ScreenShellWindow')
-    return
-  endif
-
-  let result = self.exec('list-windows')
-  if v:shell_error
-    return result
-  endif
-
-  let windows = filter(
-    \ split(result, "\n"),
-    \ 'v:val =~ "^\\s*\\d\\+:\\s\\+' . g:ScreenShellWindow . '"')
-  if len(windows)
-    let window = substitute(windows[0], '^\s*\(\d\+\):.*', '\1', '')
-    return self.exec('select-window -t:' . window)
-  endif
 endfunction " }}}
 
 let s:screenConque = {}
