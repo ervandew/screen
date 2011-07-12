@@ -347,6 +347,10 @@ function! s:ScreenInit(cmd)
         sleep 500m
         let result = s:screen{g:ScreenImpl}.setTitle()
 
+        if g:ScreenImpl == 'Tmux'
+          let g:ScreenShellTmuxPane = s:screen{g:ScreenImpl}.activePane()
+        endif
+
         " execute the supplied command if any
         if !v:shell_error && a:cmd != ''
           let result = s:screen{g:ScreenImpl}.send(a:cmd)
@@ -515,6 +519,8 @@ function! s:ScreenQuit(owner, onleave)
   elseif a:owner == 'region' || a:owner == 'window'
     let result = s:screen{g:ScreenImpl}.close(a:owner)
   endif
+
+  unlet g:ScreenShellTmuxPane
 
   if v:shell_error
     if result !~ 'No screen session found'
@@ -879,6 +885,18 @@ function s:screenTmux.isValid() dict " {{{
   return 1
 endfunction " }}}
 
+function s:screenTmux.activePane() dict "{{{
+  " tmux 1.4: (active) label for current pane
+  " tmux 1.5: Unique %paneid for every pane
+  let line = self.exec('list-panes | grep "(active)$"')
+  let paneid = matchstr(line, '\v\%\d+ \(active\)')
+  if !empty(paneid)
+    return matchstr(paneid, '\v^\%\d+')
+  else
+    return matchstr(line, '\v^\d+')
+  endif
+endfunction " }}}
+
 function s:screenTmux.attachSession(session) dict " {{{
   " TODO: currently unable to implement this since we use -S which creates a
   " new server, which a tmux list-sessions wouldn't be able to talk to.  As
@@ -913,24 +931,26 @@ function s:screenTmux.newTerminalResume() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.newWindow(focus) dict " {{{
-  return self.exec('new-window -n ' . g:ScreenShellWindow . (a:focus ? '' : ' -d'))
+  let result = self.exec('new-window -n ' . g:ScreenShellWindow . (a:focus ? '' : ' -d'))
+  let g:ScreenShellTmuxPane = self.activePane()
+  return result
 endfunction " }}}
 
 function s:screenTmux.openRegion(cmd) dict " {{{
   let orient = s:orientation == 'vertical' ? '-h ' : ''
-  let direction = s:orientation == 'vertical' ? '-L ' : '-U'
-  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane ' . direction)
-  let result = self.exec(
-    \ 'split ' .  orient . '-l ' . s:GetSize() . ' ; ' .
-    \ 'rename-window ' . g:ScreenShellWindow .
-    \ focus)
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane -t ' . self.activePane())
+
+  let result = self.exec('split ' .  orient . '-l ' . s:GetSize())
+  if v:shell_error | return result | endif
+
+  let g:ScreenShellTmuxPane = self.activePane()
+
+  let result = self.exec('rename-window ' . g:ScreenShellWindow . focus)
+  if v:shell_error | return result | endif
 
   if !v:shell_error && a:cmd != ''
     let result = self.send(a:cmd)
-  endif
-
-  if v:shell_error
-    return result
+    if v:shell_error | return result | endif
   endif
 endfunction " }}}
 
@@ -939,6 +959,7 @@ function s:screenTmux.setTitle() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.send(value) dict " {{{
+  let vimpane = self.activePane()
   let lines = type(a:value) == 3 ? a:value : [a:value]
   let tmp = tempname()
   call writefile(lines, tmp)
@@ -952,7 +973,7 @@ function s:screenTmux.send(value) dict " {{{
       \ 'paste-buffer', tmp
       \ ))
     if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
-      call self.exec('select-pane -t 0')
+      call self.exec('select-pane -t ' . vimpane)
     endif
   finally
     call delete(tmp)
@@ -981,9 +1002,8 @@ function s:screenTmux.focus() dict " {{{
     endif
   endif
 
-  " hacky: how can we be sure the shell is at pane index 1 and vim at index 0?
   if !g:ScreenShellExternal
-    let result = self.exec('select-pane -t 1')
+    let result = self.exec('select-pane -t ' . g:ScreenShellTmuxPane)
   endif
   return result
 endfunction " }}}
