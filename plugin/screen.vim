@@ -1,5 +1,5 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
-" Version: 1.4
+" Version: 1.5
 " GetLatestVimScripts: 2711 1 :AutoInstall: screen.vim
 "
 " Description: {{{
@@ -53,7 +53,7 @@ set cpo&vim
 
 " Global Variables {{{
 
-  let g:ScreenVersion = '1.4'
+  let g:ScreenVersion = '1.5'
   let g:ScreenShellActive = 0
   let g:ScreenShellCmd = ''
 
