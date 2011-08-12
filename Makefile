@@ -3,7 +3,7 @@ SHELL=/bin/bash
 all: dist
 
 dist:
-	@rm supertab.vba 2> /dev/null || true
+	@rm screen.vba 2> /dev/null || true
 	@vim -c 'r! git ls-files autoload doc plugin' \
 		-c '$$,$$d _' -c '%MkVimball screen.vba .' -c 'q!'
 
