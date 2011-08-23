@@ -46,9 +46,9 @@ set cpo&vim
     let s:terminals = ['Terminal.app']
   else
     let s:terminals = [
-        \ 'gnome-terminal', 'konsole',
+        \ 'gnome-terminal', 'konsole', 'lxterminal', 'xfce4-terminal', 'terminal',
         \ 'urxvt', 'multi-aterm', 'aterm', 'mrxvt', 'rxvt',
-        \ 'xterm',
+        \ 'terminator', 'xterm',
       \ ]
   endif
 
@@ -564,16 +564,15 @@ function! s:StartTerminal(command)
     let result = ''
     exec s:MacGuiCmd(a:command, terminal)
 
-  " gnome-terminal needs quotes around the screen call, but konsole and
-  " rxvt based terms (urxvt, aterm, mrxvt, etc.) don't work properly with
-  " quotes.  xterm seems content either way, so we'll treat gnome-terminal
-  " as the odd ball here.
-  elseif terminal == 'gnome-terminal'
+  " gnome-terminal, terminal (from xfce), and terminator need quotes around
+  " the screen call, but konsole and rxvt based terms (urxvt, aterm, mrxvt,
+  " etc.), and most others that I've tested don't work properly with quotes.
+  elseif terminal =~ '\<\(gnome-terminal\|terminal\|terminator\)\>'
     let result = system(terminal . ' -e "' . a:command . '" &')
-
   else
     let result = system(terminal . ' -e ' . a:command . ' &')
   endif
+
   return result
 endfunction " }}}
 
@@ -605,7 +604,6 @@ function! s:GetSize()
 endfunction " }}}
 
 " s:GetTerminal() {{{
-" Generate a name for the given command.
 function! s:GetTerminal()
   if g:ScreenShellTerminal == ''
     for term in s:terminals
