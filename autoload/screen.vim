@@ -46,6 +46,7 @@ set cpo&vim
     let s:terminals = ['Terminal.app']
   else
     let s:terminals = [
+        \ 'x-terminal-emulator',
         \ 'gnome-terminal', 'konsole', 'lxterminal', 'xfce4-terminal', 'terminal',
         \ 'urxvt', 'multi-aterm', 'aterm', 'mrxvt', 'rxvt',
         \ 'terminator', 'xterm',
@@ -546,6 +547,14 @@ function! s:StartTerminal(command)
   if !s:ValidTerminal(terminal)
     echoerr 'Unable to find a terminal, please set g:ScreenShellTerminal'
     return
+  endif
+
+  " for x-terminal-emulator on debian/ubuntu, determine the actual target
+  if terminal == 'x-terminal-emulator'
+    let value = system('readlink -f "$(which x-terminal-emulator)"')
+    if value !~ '^\s*$'
+      let terminal = fnamemodify(value, ':t:r')
+    endif
   endif
 
   " handle using cygwin bash
