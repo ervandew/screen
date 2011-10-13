@@ -972,7 +972,7 @@ function s:screenTmux.send(value) dict " {{{
   call writefile(lines, tmp)
   try
     let result = self.focus()
-    if v:shell_error
+    if v:shell_error || (type(result) == 0 && result == 0)
       return result
     endif
     let result = self.exec(printf(
@@ -1010,7 +1010,16 @@ function s:screenTmux.focus() dict " {{{
   endif
 
   if !g:ScreenShellExternal
-    let result = self.exec('select-pane -t ' . g:ScreenShellTmuxPane)
+    let panes = []
+    let result = self.exec('list-panes')
+    let panes = filter(
+      \ split(result, "\n"),
+      \ 'v:val =~ " ' . g:ScreenShellTmuxPane . '\\>"')
+    if len(panes)
+      let result = self.exec('select-pane -t ' . g:ScreenShellTmuxPane)
+    else
+      return 0
+    endif
   endif
   return result
 endfunction " }}}
@@ -1021,7 +1030,7 @@ endfunction " }}}
 
 function s:screenTmux.close(type) dict " {{{
   let result = self.focus()
-  if v:shell_error
+  if v:shell_error || (type(result) == 0 && result == 0)
     return result
   endif
   return self.exec('kill-pane')
@@ -1037,7 +1046,7 @@ function s:screenTmux.exec(cmd) dict " {{{
 
   " hack to account for apparent bug in tmux when redirecting stdout to a file
   " when attempting to list windows
-  if cmd =~ 'list-windows'
+  if cmd =~ 'list-\(windows\|panes\)'
     let cmd .= ' | cat'
   endif
 
