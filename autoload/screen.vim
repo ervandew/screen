@@ -737,6 +737,7 @@ endfunction " }}}
 function s:screenGnuScreen.bootstrap(server, sessionfile, cmd) dict " {{{
   let vertical = s:orientation == 'vertical' ? 'Vertical' : ''
   exec 'silent! !screen -S ' . g:ScreenShellSession .
+    \ g:ScreenShellScreenInitArgs .
     \ ' vim ' . a:server .
     \ '-c "silent source ' . escape(a:sessionfile, ' ') . '" ' .
     \ '-c "ScreenShell' . vertical . ' ' . a:cmd . '"'
@@ -747,7 +748,7 @@ function s:screenGnuScreen.newSessionName() dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.newTerminal() dict " {{{
-  return s:StartTerminal('screen -S ' . g:ScreenShellSession)
+  return s:StartTerminal('screen -S ' . g:ScreenShellSession . g:ScreenShellScreenInitArgs)
 endfunction " }}}
 
 function s:screenGnuScreen.newTerminalMulti() dict " {{{
@@ -755,7 +756,7 @@ function s:screenGnuScreen.newTerminalMulti() dict " {{{
 endfunction " }}}
 
 function s:screenGnuScreen.newTerminalResume() dict " {{{
-  return s:StartTerminal('screen -r ' . g:ScreenShellSession)
+  return s:StartTerminal('screen -r ' . g:ScreenShellSession . g:ScreenShellScreenInitArgs)
 endfunction " }}}
 
 function s:screenGnuScreen.newWindow(focus) dict " {{{

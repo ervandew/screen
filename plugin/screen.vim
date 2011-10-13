@@ -62,6 +62,10 @@ set cpo&vim
     "let g:ScreenImpl = 'Tmux'
   endif
 
+  if !exists('g:ScreenShellScreenInitArgs')
+    let g:ScreenShellScreenInitArgs = ''
+  endif
+
   if !exists('g:ScreenShellTmuxInitArgs')
     let g:ScreenShellTmuxInitArgs = ''
   endif
