@@ -157,6 +157,15 @@ g:ScreenImpl (default value: 'GnuScreen')
 This sets the name of the terminal multiplexer you want to use.  Support
 values include 'GnuScreen' or 'Tmux'.
 
+Note: There are also 2 additional variables that allow you to specify any
+options you would like to be passed to your terminal muliplexer of choice:
+
+*g:ScreenShellScreenInitArgs*
+*g:ScreenShellTmuxInitArgs*
+
+Example which starts tmux with 256 color support: >
+  let g:ScreenShellTmuxInitArgs = '-2'
+>
 
 Shell height                                *screen-shellheight*
                                             *g:ScreenShellHeight*
