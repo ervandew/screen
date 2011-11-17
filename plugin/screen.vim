@@ -120,10 +120,26 @@ set cpo&vim
     let g:ScreenShellExpandTabs = 0
   endif
 
+  " List of lines to be sent before (prefix) and after (suffix) the content
+  " sent by each call of :ScreenSend.
+  if !exists('g:ScreenShellSendPrefix')
+    let g:ScreenShellSendPrefix = ''
+  endif
+  if !exists('g:ScreenShellSendSuffix')
+    let g:ScreenShellSendSuffix = ''
+  endif
+
 " }}}
 
-" Commands {{{
+" Autocmds {{{
 
+  augroup ScreenShellExit
+    autocmd User * call screen#ExitCleanup()
+  augroup END
+
+" }}}
+
+function! ScreenShellCommands() " {{{
   if !exists(':ScreenShell')
     " unfortunately, to reap the benefits of an autoload scripts, we can't
     " call this, but instead have to copy the commands inline.
@@ -142,23 +158,12 @@ set cpo&vim
     endif
   endif
 
-" }}}
+  if !exists(':IPython')
+    command IPython :call screen#IPython()
+  endif
+endfunction " }}}
 
-" Autocmds {{{
-
-  " while nice for vim screen window titles, this can kind of screw things up
-  " since when exiting vim there could now be more than one screen window with
-  " the title 'shell'.
-  "if expand('$TERM') =~ '^screen'
-  "  augroup vim_screen
-  "    autocmd!
-  "    autocmd VimEnter,BufWinEnter,WinEnter *
-  "      \ exec "silent! !echo -ne '\\ek" . expand('%:t') . "\\e\\\\'"
-  "    autocmd VimLeave * exec "silent! !echo -ne '\\ekshell\\e\\\\'"
-  "  augroup END
-  "endif
-
-" }}}
+call ScreenShellCommands()
 
 let &cpo = s:save_cpo
 

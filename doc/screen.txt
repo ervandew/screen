@@ -14,6 +14,7 @@ Screen Usage                         |screen-usage|
   :ScreenShellAttach                 |screen-shellattach|
   :ScreenSend                        |screen-send|
   :ScreenQuit                        |screen-quit|
+  :IPython                           |screen-ipython|
 Screen Options                       |screen-options|
   Terminal muliplexer                |screen-impl|
   Shell height                       |screen-shellheight|
@@ -21,6 +22,8 @@ Screen Options                       |screen-options|
   External shell                     |screen-externalshell|
   Server name                        |screen-servername|
   Terminal                           |screen-terminal|
+  Expand Tabs                        |screen-expandtabs|
+  Send Prefix/Suffix                 |screen-sendprefix|
 Custom mappings                      |screen-mappings|
 Script integration                   |screen-scriptintegration|
 Gotchas                              |screen-gotchas|
@@ -127,11 +130,11 @@ Below is a comprehensive list of the commands which screen.vim provides:
   variable, which when non 0, will set the title on the currently focused gnu
   screen window and target it for all send commands.
 
-:ScreenSend
+:ScreenSend                         *screen-send*
   Send the visual selection or the entire buffer contents to the running gnu
   screen shell window.
 
-:ScreenQuit
+:ScreenQuit                         *screen-quit*
   Save all currently modified vim buffers and quit gnu screen, returning you
   to your previous vim instance running outside of gnu screen
 
@@ -141,6 +144,10 @@ Below is a comprehensive list of the commands which screen.vim provides:
     :ScreenShell, then exiting vim will quit the gnu screen session as
     well (configurable via g:ScreenShellQuitOnVimExit).
 
+:IPython                         *screen-ipython*
+  Command which starts the screen shell with ipython running in it taking care
+  of setting |g:ScreenShellSendPrefix| and |g:ScreenShellSendSuffix| properly
+  to handle ipython's auto indent support.
 
 -----------------------------------------------------------------------------
 Screen Options                              *screen-options*
@@ -249,6 +256,18 @@ tabs as an attempt to perform completion resulting in the text sent not
 performing the function you intended.  As a work around, you can set this
 setting to a non 0 value resulting in all tabs being expanded to spaces before
 sending the text to screen/tmux.
+
+
+Send Prefix/Suffix                          *screen-sendprefix*
+                                            *g:ScreenShellSendPrefix*
+                                            *g:ScreenShellSendSuffix*
+
+g:ScreenShellSendPrefix (default value: '')
+g:ScreenShellSendSuffix (default value: '')
+
+When sending text from vim to an external program, these variables can be used
+to prepend/append lines to that content. The value must be a string which will
+be split into a list on any \n chars.
 
 -----------------------------------------------------------------------------
 Custom Mappings                             *screen-mappings*

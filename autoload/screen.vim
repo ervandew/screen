@@ -55,21 +55,6 @@ set cpo&vim
 
 " }}}
 
-" ScreenShellCommands() {{{
-function! screen#ScreenShellCommands()
-  command -nargs=? -complete=shellcmd ScreenShell
-    \ :call screen#ScreenShell('<args>', 'horizontal')
-  command -nargs=? -complete=customlist,screen#CommandCompleteScreenSessions
-    \ ScreenShellAttach :call screen#ScreenShellAttach('<args>')
-
-  if !has('gui_running') &&
-   \ !g:ScreenShellExternal &&
-   \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
-    command -nargs=? -complete=shellcmd ScreenShellVertical
-      \ :call screen#ScreenShell('<args>', 'vertical')
-  endif
-endfunction " }}}
-
 " ScreenShell(cmd, orientation) {{{
 " Open a split shell.
 function! screen#ScreenShell(cmd, orientation)
@@ -220,6 +205,13 @@ function! s:ScreenBootstrap(cmd)
 
     call s:screen{g:ScreenImpl}.bootstrap(server, sessionfile, a:cmd)
   finally
+    let g:ScreenShellActive = 0
+    let g:ScreenShellCmd = ''
+    try
+      doautoall ScreenShellExit User
+    catch /E216/
+    endtry
+
     redraw!
 
     unlet g:ScreenShellBootstrapped
@@ -448,6 +440,13 @@ function! s:ScreenSend(...)
     call map(lines, 'substitute(v:val, "\\t", expanded, "g")')
   endif
 
+  if len(g:ScreenShellSendPrefix)
+    let lines = split(g:ScreenShellSendPrefix, '\n') + lines
+  endif
+  if len(g:ScreenShellSendSuffix)
+    let lines += split(g:ScreenShellSendSuffix, '\n')
+  endif
+
   let result = s:screen{g:ScreenImpl}.send(lines)
 
   if v:shell_error
@@ -494,7 +493,7 @@ function! s:ScreenQuit(owner, onleave)
       let bufnum = bufnum + 1
     endwhile
   else
-    call screen#ScreenShellCommands()
+    call ScreenShellCommands()
     delcommand ScreenQuit
     delcommand ScreenSend
     unlet g:ScreenShellSend
@@ -658,6 +657,34 @@ function! s:MacGuiCmd(cmd, term)
 
   let cmd = substitute(a:cmd, '"', "'", 'g')
   return 'silent !osascript -e "do shell script \"' . cmd . '\""'
+endfunction " }}}
+
+function! screen#ExitCleanup() " {{{
+  if exists('g:ScreenShellActive') && g:ScreenShellActive
+    return
+  endif
+
+  if exists('g:ScreenShellSendVarsRestore')
+    if exists('g:ScreenShellSendPrefixOld')
+      let g:ScreenShellSendPrefix = g:ScreenShellSendPrefixOld
+      unlet g:ScreenShellSendPrefixOld
+    endif
+    if exists('g:ScreenShellSendSuffixOld')
+      let g:ScreenShellSendSuffix = g:ScreenShellSendSuffixOld
+      unlet g:ScreenShellSendSuffixOld
+    endif
+    unlet g:ScreenShellSendVarsRestore
+  endif
+endfunction " }}}
+
+function! screen#IPython() " {{{
+  let g:ScreenShellSendPrefixOld = g:ScreenShellSendPrefix
+  let g:ScreenShellSendSuffixOld = g:ScreenShellSendSuffix
+  let g:ScreenShellSendPrefix = '%cpaste'
+  let g:ScreenShellSendSuffix = '--'
+  let g:ScreenShellSendVarsRestore = 1
+
+  ScreenShell /usr/bin/ipython
 endfunction " }}}
 
 " CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) {{{
