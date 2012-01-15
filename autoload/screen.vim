@@ -1064,7 +1064,7 @@ function! s:screenTmux.focusPane(pane) dict
   " If this is a unique paneid, it may be in a different window
   if a:pane =~# '\v^\%\d+$'
     " tmux 1.5: list-{panes,windows} gain `-a` flag
-    let result = self.exec('list-panes -a | grep ' . a:pane)
+    let result = self.exec('list-panes -a | grep "' . a:pane . '\([^0-9]\|$\)"')
     if v:shell_error | return result | endif
 
     " `list-panes -a` returns session:window:pane
