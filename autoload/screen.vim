@@ -1,7 +1,7 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 "
 " License: {{{
-"   Copyright (c) 2009 - 2011
+"   Copyright (c) 2009 - 2012
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -164,10 +164,10 @@ function! s:ScreenBootstrap(cmd)
     " support for taglist
     if exists(':TlistSessionSave') &&
      \ exists('g:TagList_title') &&
-     \ bufwinnr(g:TagList_title)
+     \ bufwinnr(g:TagList_title) != -1
       let g:ScreenShellTaglistSession = sessionfile . '.taglist'
       exec 'TlistSessionSave ' . g:ScreenShellTaglistSession
-      exec 'silent! !echo "Tlist | TlistSessionLoad ' .
+      exec 'silent! !echo "TlistSessionLoad ' .
         \ g:ScreenShellTaglistSession . '" >> "' . sessionfile . '"'
     endif
 
