@@ -410,18 +410,17 @@ function! s:ScreenSend(...)
     let lines = getline(a:1, a:2)
     let mode = visualmode(1)
     if mode != '' && line("'<") == a:1
+      let start = col("'<") - 1
+      let end = col("'>") - 1
       if mode == "v"
-        let start = col("'<") - 1
-        let end = col("'>") - 1
         " slice in end before start in case the selection is only one line
         let lines[-1] = lines[-1][: end]
         let lines[0] = lines[0][start :]
       elseif mode == "\<c-v>"
-        let start = col("'<")
-        if col("'>") < start
-          let start = col("'>")
+        if end < start
+          let [end, start] = [start, end]
         endif
-        let start = start - 1
+        call map(lines, 'v:val[: end]')
         call map(lines, 'v:val[start :]')
       endif
     endif
