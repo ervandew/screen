@@ -13,6 +13,7 @@ Screen Usage                         |screen-usage|
   :ScreenShell                       |screen-shell|
   :ScreenShellAttach                 |screen-shellattach|
   :ScreenSend                        |screen-send|
+  :ScreenShellReopen                 |screen-shellreopen|
   :ScreenQuit                        |screen-quit|
   :IPython                           |screen-ipython|
 Screen Options                       |screen-options|
@@ -130,11 +131,18 @@ Below is a comprehensive list of the commands which screen.vim provides:
   variable, which when non 0, will set the title on the currently focused gnu
   screen window and target it for all send commands.
 
-:ScreenSend                         *screen-send*
+:ScreenShellReopen                  *screen-shellreopen* *:ScreenShellReopen*
+  If you've started a shell using |:ScreenShell| or |:ScreenShellVertical| and
+  exit that shell manually (^D, $ exit, etc) without running |:ScreenQuit|, then
+  :ScreenShellReopen will re-open that shell again for you.
+
+  Note: Currently only available when using tmux.
+
+:ScreenSend                         *screen-send* *:ScreenSend*
   Send the visual selection or the entire buffer contents to the running gnu
   screen shell window.
 
-:ScreenQuit                         *screen-quit*
+:ScreenQuit                         *screen-quit* *:ScreenQuit*
   Save all currently modified vim buffers and quit gnu screen, returning you
   to your previous vim instance running outside of gnu screen
 
@@ -144,7 +152,7 @@ Below is a comprehensive list of the commands which screen.vim provides:
     :ScreenShell, then exiting vim will quit the gnu screen session as
     well (configurable via g:ScreenShellQuitOnVimExit).
 
-:IPython                         *screen-ipython*
+:IPython                         *screen-ipython* *:IPython*
   Command which starts the screen shell with ipython running in it taking care
   of setting |g:ScreenShellSendPrefix| and |g:ScreenShellSendSuffix| properly
   to handle ipython's auto indent support.

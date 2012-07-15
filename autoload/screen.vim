@@ -133,9 +133,7 @@ function! screen#ScreenShellAttach(session)
   endif
 endfunction " }}}
 
-" s:ScreenBootstrap(cmd) {{{
-" Bootstrap a new screen session.
-function! s:ScreenBootstrap(cmd)
+function! s:ScreenBootstrap(cmd) " {{{
   try
     let g:ScreenShellBootstrapped = 1
     let g:ScreenShellSession = s:screen{g:ScreenImpl}.newSessionName()
@@ -269,9 +267,7 @@ function! s:ScreenBootstrap(cmd)
   endtry
 endfunction " }}}
 
-" s:ScreenInit(cmd) {{{
-" Initialize the current screen session.
-function! s:ScreenInit(cmd)
+function! s:ScreenInit(cmd) " {{{
   let g:ScreenShellWindow = 'screenshell'
   " use a portion of the command as the title, if supplied
   "if a:cmd != '' && a:cmd !~ '^\s*vim\>'
@@ -377,6 +373,11 @@ function! s:ScreenInit(cmd)
         delcommand ScreenShellVertical
       endif
 
+      if g:ScreenImpl == 'Tmux'
+        command -nargs=? -complete=shellcmd ScreenShellReopen
+          \ :call <SID>ScreenShellReopen('<args>')
+      endif
+
       " Hook for creating keybindings (or similar)
       let g:ScreenShellActive = 1
       let g:ScreenShellCmd = a:cmd
@@ -388,9 +389,15 @@ function! s:ScreenInit(cmd)
   endif
 endfunction " }}}
 
-" s:ScreenSend(string or list<string> or line1, line2) {{{
-" Send lines to the screen shell.
-function! s:ScreenSend(...)
+function! s:ScreenShellReopen(cmd) " {{{
+    if !s:screen{g:ScreenImpl}.exists()
+      call s:ScreenInit(a:cmd)
+    endif
+endfun " }}}
+
+function! s:ScreenSend(...) " {{{
+  " args: string or list<string> or line1, line2
+
   if a:0 == 1
     let argtype = type(a:1)
     if argtype == 1
@@ -453,8 +460,7 @@ function! s:ScreenSend(...)
   endif
 endfunction " }}}
 
-" s:ScreenFocus() {{{
-function! s:ScreenFocus()
+function! s:ScreenFocus() " {{{
   let result = s:screen{g:ScreenImpl}.focus()
 
   if v:shell_error
@@ -462,22 +468,17 @@ function! s:ScreenFocus()
   endif
 endfun " }}}
 
-" s:ScreenSendFuncRef() {{{
-function! s:ScreenSendFuncRef()
+function! s:ScreenSendFuncRef() " {{{
   let sid = matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_ScreenSendFuncRef$')
   return function(printf('<SNR>%s_ScreenSend', sid))
 endfun " }}}
 
-" s:ScreenFocusFuncRef() {{{
-function! s:ScreenFocusFuncRef()
+function! s:ScreenFocusFuncRef() " {{{
   let sid = matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_ScreenFocusFuncRef$')
   return function(printf('<SNR>%s_ScreenFocus', sid))
 endfun " }}}
 
-" s:ScreenQuit(owner, onleave) {{{
-" Quit the current screen session (short cut to manually quiting vim and
-" closing all screen windows.
-function! s:ScreenQuit(owner, onleave)
+function! s:ScreenQuit(owner, onleave) " {{{
   if exists('g:ScreenShellBootstrapped')
     if !a:onleave
       wa
@@ -495,6 +496,9 @@ function! s:ScreenQuit(owner, onleave)
     call ScreenShellCommands()
     delcommand ScreenQuit
     delcommand ScreenSend
+    if exists(':ScreenShellReopen')
+      delcommand ScreenShellReopen
+    endif
     unlet g:ScreenShellSend
     unlet g:ScreenShellFocus
     augroup screen_shell
@@ -530,9 +534,7 @@ function! s:ScreenQuit(owner, onleave)
   endif
 endfunction " }}}
 
-" s:ScreenCmdName(cmd) {{{
-" Generate a name for the given command.
-function! s:ScreenCmdName(cmd)
+function! s:ScreenCmdName(cmd) " {{{
   let cmd = substitute(a:cmd, '^\s*\(\S\+\)\s.*', '\1', '')
   " if the command is a path to one, use the tail of the path
   if cmd =~ '/'
@@ -541,8 +543,7 @@ function! s:ScreenCmdName(cmd)
   return cmd
 endfunction " }}}
 
-" s:StartTerminal(command) {{{
-function! s:StartTerminal(command)
+function! s:StartTerminal(command) " {{{
   let terminal = s:GetTerminal()
   if !s:ValidTerminal(terminal)
     echoerr 'Unable to find a terminal, please set g:ScreenShellTerminal'
@@ -585,9 +586,7 @@ function! s:StartTerminal(command)
   return result
 endfunction " }}}
 
-" s:GetScreenSessions() {{{
-" Gets a list of screen [session, state] pairs.
-function! s:GetScreenSessions()
+function! s:GetScreenSessions() " {{{
   let results = split(system('screen -wipe'), "\n")
   call filter(results, 'v:val =~ "(\\w\\+)"')
   call map(results, '[' .
@@ -596,8 +595,7 @@ function! s:GetScreenSessions()
   return results
 endfunction " }}}
 
-" s:GetSize() {{{
-function! s:GetSize()
+function! s:GetSize() " {{{
   if s:orientation == 'vertical'
     let size = g:ScreenShellWidth
     let sizefunc = 'winwidth'
@@ -612,8 +610,7 @@ function! s:GetSize()
   return size
 endfunction " }}}
 
-" s:GetTerminal() {{{
-function! s:GetTerminal()
+function! s:GetTerminal() " {{{
   if g:ScreenShellTerminal == ''
     for term in s:terminals
       if s:ValidTerminal(term)
@@ -625,8 +622,7 @@ function! s:GetTerminal()
   return g:ScreenShellTerminal
 endfunction " }}}
 
-" s:ValidTerminal(term) {{{
-function! s:ValidTerminal(term)
+function! s:ValidTerminal(term) " {{{
   if a:term == ''
     return 0
   endif
@@ -647,8 +643,7 @@ function! s:ValidTerminal(term)
   return executable(a:term)
 endfunction " }}}
 
-" s:MacGuiCmd(cmd, term) {{{
-function! s:MacGuiCmd(cmd, term)
+function! s:MacGuiCmd(cmd, term) " {{{
   if a:term != '0'
     return 'silent !osascript -e "tell application \"' . a:term .
       \ '\"" -e "do script \"' . a:cmd . '\"" -e "end tell"'
@@ -686,8 +681,7 @@ function! screen#IPython() " {{{
   ScreenShell /usr/bin/ipython
 endfunction " }}}
 
-" CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) {{{
-function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos)
+function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) " {{{
   let cmdLine = strpart(a:cmdLine, 0, a:cursorPos)
   let cmdTail = strpart(a:cmdLine, a:cursorPos)
   let argLead = substitute(a:argLead, cmdTail . '$', '', '')
@@ -1001,6 +995,7 @@ function s:screenTmux.send(value) dict " {{{
   call writefile(lines, tmp)
   try
     let result = self.focus()
+
     if v:shell_error || (type(result) == 0 && result == 0)
       return result
     endif
@@ -1063,6 +1058,14 @@ function s:screenTmux.close(type) dict " {{{
     return result
   endif
   return self.exec('kill-pane')
+endfunction " }}}
+
+function s:screenTmux.exists() dict " {{{
+  let result = self.exec('list-panes')
+  let panes = filter(
+    \ split(result, "\n"),
+    \ 'v:val =~ " ' . g:ScreenShellTmuxPane . '\\>"')
+  return len(panes)
 endfunction " }}}
 
 function s:screenTmux.exec(cmd) dict " {{{
