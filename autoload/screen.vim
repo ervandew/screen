@@ -55,9 +55,9 @@ set cpo&vim
 
 " }}}
 
-" ScreenShell(cmd, orientation) {{{
-" Open a split shell.
-function! screen#ScreenShell(cmd, orientation)
+function! screen#ScreenShell(cmd, orientation) " {{{
+  " Open a split shell.
+
   if g:ScreenImpl !~ '^\(GnuScreen\|Tmux\)$'
     echohl WarningMsg
     echom 'Unsupported g:ScreenImpl value "' . g:ScreenImpl . '".  ' .
@@ -110,9 +110,9 @@ function! screen#ScreenShell(cmd, orientation)
   endtry
 endfunction " }}}
 
-" ScreenShellAttach(session) {{{
-" Attach to an existing screen session.
-function! screen#ScreenShellAttach(session)
+function! screen#ScreenShellAttach(session) " {{{
+  " Attach to an existing screen session.
+
   if !s:screen{g:ScreenImpl}.isValid()
     return
   endif
@@ -120,7 +120,7 @@ function! screen#ScreenShellAttach(session)
   let g:ScreenShellSession = s:screen{g:ScreenImpl}.attachSession(a:session)
 
   if g:ScreenShellSession != '0'
-    if !exists(':ScreenSend')
+    if !screen#CmdDefined(':ScreenSend')
       command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
       let g:ScreenShellSend = s:ScreenSendFuncRef()
       let g:ScreenShellFocus = s:ScreenFocusFuncRef()
@@ -160,7 +160,7 @@ function! s:ScreenBootstrap(cmd) " {{{
     endif
 
     " support for taglist
-    if exists(':TlistSessionSave') &&
+    if screen#CmdDefined(':TlistSessionSave') &&
      \ exists('g:TagList_title') &&
      \ bufwinnr(g:TagList_title) != -1
       let g:ScreenShellTaglistSession = sessionfile . '.taglist'
@@ -349,12 +349,12 @@ function! s:ScreenInit(cmd) " {{{
   endif
 
   if v:shell_error
-    if exists(':ScreenQuit')
+    if screen#CmdDefined(':ScreenQuit')
       delcommand ScreenQuit
     endif
     echoerr result
   else
-    if !exists(':ScreenSend')
+    if !screen#CmdDefined(':ScreenSend')
       command -nargs=0 -range=% ScreenSend :call <SID>ScreenSend(<line1>, <line2>)
       exec "command -nargs=0 ScreenQuit :call <SID>ScreenQuit('" . owner . "', 0)"
       if g:ScreenShellQuitOnVimExit
@@ -369,7 +369,7 @@ function! s:ScreenInit(cmd) " {{{
       " remove :ScreenShell command to avoid accidentally calling it again.
       delcommand ScreenShell
       delcommand ScreenShellAttach
-      if exists(':ScreenShellVertical')
+      if screen#CmdDefined(':ScreenShellVertical')
         delcommand ScreenShellVertical
       endif
 
@@ -496,7 +496,7 @@ function! s:ScreenQuit(owner, onleave) " {{{
     call ScreenShellCommands()
     delcommand ScreenQuit
     delcommand ScreenSend
-    if exists(':ScreenShellReopen')
+    if screen#CmdDefined(':ScreenShellReopen')
       delcommand ScreenShellReopen
     endif
     unlet g:ScreenShellSend
@@ -651,6 +651,10 @@ function! s:MacGuiCmd(cmd, term) " {{{
 
   let cmd = substitute(a:cmd, '"', "'", 'g')
   return 'silent !osascript -e "do shell script \"' . cmd . '\""'
+endfunction " }}}
+
+function! screen#CmdDefined(cmd) " {{{
+  return exists(a:cmd) == 2
 endfunction " }}}
 
 function! screen#ExitCleanup() " {{{
@@ -1088,7 +1092,7 @@ endfunction " }}}
 let s:screenConque = {}
 
 function s:screenConque.isValid() dict " {{{
-  if !exists(':ConqueTerm')
+  if !screen#CmdDefined(':ConqueTerm')
     echoerr 'The conque plugin does not appear to be loaded'
     return 0
   endif

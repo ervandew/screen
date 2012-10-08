@@ -14,7 +14,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2009 - 2011
+"   Copyright (c) 2009 - 2012
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -140,7 +140,7 @@ set cpo&vim
 " }}}
 
 function! ScreenShellCommands() " {{{
-  if !exists(':ScreenShell')
+  if !screen#CmdDefined(':ScreenShell')
     " unfortunately, to reap the benefits of an autoload scripts, we can't
     " call this, but instead have to copy the commands inline.
     "call screen#ScreenShellCommands()
@@ -158,7 +158,7 @@ function! ScreenShellCommands() " {{{
     endif
   endif
 
-  if !exists(':IPython')
+  if !screen#CmdDefined(':IPython')
     command IPython :call screen#IPython()
   endif
 endfunction " }}}
