@@ -161,6 +161,11 @@ function! ScreenShellCommands() " {{{
   if !screen#CmdDefined(':IPython')
     command IPython :call screen#IPython()
   endif
+
+  " TODO: add to the documentation
+  if !screen#CmdDefined(':IPythonVertical')
+    command IPythonVertical :call screen#IPythonVertical()
+  endif
 endfunction " }}}
 
 call ScreenShellCommands()

@@ -691,6 +691,16 @@ function! screen#IPython() " {{{
   ScreenShell /usr/bin/ipython
 endfunction " }}}
 
+function! screen#IPythonVertical() " {{{
+  let g:ScreenShellSendPrefixOld = g:ScreenShellSendPrefix
+  let g:ScreenShellSendSuffixOld = g:ScreenShellSendSuffix
+  let g:ScreenShellSendPrefix = '%cpaste'
+  let g:ScreenShellSendSuffix = '--'
+  let g:ScreenShellSendVarsRestore = 1
+
+  ScreenShellVertical /usr/bin/ipython
+endfunction " }}}
+
 function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) " {{{
   let cmdLine = strpart(a:cmdLine, 0, a:cursorPos)
   let cmdTail = strpart(a:cmdLine, a:cursorPos)
