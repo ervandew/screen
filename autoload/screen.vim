@@ -1,7 +1,7 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 "
 " License: {{{
-"   Copyright (c) 2009 - 2012
+"   Copyright (c) 2009 - 2013
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -55,8 +55,12 @@ set cpo&vim
 
 " }}}
 
-function! screen#ScreenShell(cmd, orientation) " {{{
+function! screen#ScreenShell(cmd, ...) " {{{
   " Open a split shell.
+  " Optional args:
+  "   orientation (or <bang> from: command -bang)
+  "     - 'horizontal' or '': open a horizontal split
+  "     - 'vertical' or '!':  open a vertical split
 
   if g:ScreenImpl !~ '^\(GnuScreen\|Tmux\)$'
     echohl WarningMsg
@@ -70,7 +74,10 @@ function! screen#ScreenShell(cmd, orientation) " {{{
     return
   endif
 
-  let s:orientation = a:orientation
+  let s:orientation = 'horizontal'
+  if a:0 && (a:1 == '!' || a:1 == 'vertical')
+    let s:orientation = 'vertical'
+  endif
 
   " Specifies a name to be supplied to vim's --servername arg when invoked in
   " a new screen session.
@@ -681,14 +688,15 @@ function! screen#ExitCleanup() " {{{
   endif
 endfunction " }}}
 
-function! screen#IPython() " {{{
+function! screen#IPython(...) " {{{
+  let bang = a:0 ? a:1 : ''
   let g:ScreenShellSendPrefixOld = g:ScreenShellSendPrefix
   let g:ScreenShellSendSuffixOld = g:ScreenShellSendSuffix
   let g:ScreenShellSendPrefix = '%cpaste'
   let g:ScreenShellSendSuffix = '--'
   let g:ScreenShellSendVarsRestore = 1
 
-  ScreenShell /usr/bin/ipython
+  exec 'ScreenShell' . bang . ' /usr/bin/ipython'
 endfunction " }}}
 
 function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) " {{{

@@ -14,7 +14,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2009 - 2012
+"   Copyright (c) 2009 - 2013
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -140,26 +140,35 @@ set cpo&vim
 " }}}
 
 function! ScreenShellCommands() " {{{
-  if !screen#CmdDefined(':ScreenShell')
-    " unfortunately, to reap the benefits of an autoload scripts, we can't
-    " call this, but instead have to copy the commands inline.
-    "call screen#ScreenShellCommands()
+  let supports_vertical =
+    \ !has('gui_running') &&
+    \ !g:ScreenShellExternal &&
+    \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
 
-    command -nargs=? -complete=shellcmd ScreenShell
-      \ :call screen#ScreenShell('<args>', 'horizontal')
+  if !screen#CmdDefined(':ScreenShell')
     command -nargs=? -complete=customlist,screen#CommandCompleteScreenSessions
       \ ScreenShellAttach :call screen#ScreenShellAttach('<args>')
 
-    if !has('gui_running') &&
-     \ !g:ScreenShellExternal &&
-     \ (g:ScreenImpl == 'Tmux' || g:ScreenShellGnuScreenVerticalSupport != '')
+    if supports_vertical
+      command -nargs=? -complete=shellcmd -bang ScreenShell
+        \ :call screen#ScreenShell('<args>', '<bang>')
+
+      " retained solely for backwards compatability since 3rd party scripts
+      " may make use of this.
       command -nargs=? -complete=shellcmd ScreenShellVertical
-        \ :call screen#ScreenShell('<args>', 'vertical')
+        \ :call screen#ScreenShell('<args>', '!')
+    else
+      command -nargs=? -complete=shellcmd ScreenShell
+        \ :call screen#ScreenShell('<args>')
     endif
   endif
 
   if !screen#CmdDefined(':IPython')
-    command IPython :call screen#IPython()
+    if supports_vertical
+      command -bang IPython :call screen#IPython('<bang>')
+    else
+      command IPython :call screen#IPython()
+    endif
   endif
 endfunction " }}}
 
