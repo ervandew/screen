@@ -58,8 +58,11 @@ set cpo&vim
   let g:ScreenShellCmd = ''
 
   if !exists('g:ScreenImpl')
-    let g:ScreenImpl = 'GnuScreen'
-    "let g:ScreenImpl = 'Tmux'
+    if executable('tmux')
+      let g:ScreenImpl = 'Tmux'
+    else
+      let g:ScreenImpl = 'GnuScreen'
+    endif
   endif
 
   if !exists('g:ScreenShellScreenInitArgs')
