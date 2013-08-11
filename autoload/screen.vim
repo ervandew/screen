@@ -933,18 +933,6 @@ function s:screenTmux.isValid() dict " {{{
   return 1
 endfunction " }}}
 
-function s:screenTmux.activePane() dict "{{{
-  " tmux 1.4: (active) label for current pane
-  " tmux 1.5: Unique %paneid for every pane
-  let line = self.exec('list-panes | grep "(active)$"')
-  let paneid = matchstr(line, '\v\%\d+ \(active\)')
-  if !empty(paneid)
-    return matchstr(paneid, '\v^\%\d+')
-  else
-    return matchstr(line, '\v^\d+')
-  endif
-endfunction " }}}
-
 function s:screenTmux.attachSession(session) dict " {{{
   " TODO: currently unable to implement this since we use -S which creates a
   " new server, which a tmux list-sessions wouldn't be able to talk to.  As
@@ -979,22 +967,23 @@ function s:screenTmux.newTerminalResume() dict " {{{
 endfunction " }}}
 
 function s:screenTmux.newWindow(focus) dict " {{{
-  let result = self.exec('new-window -n ' . g:ScreenShellWindow . (a:focus ? '' : ' -d'))
+  let result = self.exec('new-window ' . (a:focus ? '' : ' -d'))
   let g:ScreenShellTmuxPane = self.activePane()
   return result
 endfunction " }}}
 
 function s:screenTmux.openRegion(cmd) dict " {{{
   let orient = s:orientation == 'vertical' ? '-h ' : ''
-  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : (' ; select-pane -t ' . self.activePane())
+  let focus = g:ScreenShellInitialFocus == 'shell' ? '' : self.activePane()
 
   let result = self.exec('split ' .  orient . '-l ' . s:GetSize())
   if v:shell_error | return result | endif
 
   let g:ScreenShellTmuxPane = self.activePane()
 
-  let result = self.exec('rename-window ' . g:ScreenShellWindow . focus)
-  if v:shell_error | return result | endif
+  if !empty(focus)
+    let result = self.focusPane(focus)
+  endif
 
   if !v:shell_error && a:cmd != ''
     let result = self.send(a:cmd)
@@ -1002,8 +991,10 @@ function s:screenTmux.openRegion(cmd) dict " {{{
   endif
 endfunction " }}}
 
-function s:screenTmux.setTitle() dict " {{{
-  return self.exec('rename-window ' . g:ScreenShellWindow)
+" s:screenTmux.setTitle() {{{
+" NOP; we are no longer relying on Tmux window titles
+function s:screenTmux.setTitle() dict
+  return 1
 endfunction " }}}
 
 function s:screenTmux.send(value) dict " {{{
@@ -1022,7 +1013,7 @@ function s:screenTmux.send(value) dict " {{{
       \ 'paste-buffer', tmp
       \ ))
     if exists('g:ScreenShellWindow') && !g:ScreenShellExternal
-      call self.exec('select-pane -t ' . vimpane)
+      let result = self.focusPane(vimpane)
     endif
   finally
     call delete(tmp)
@@ -1031,39 +1022,7 @@ function s:screenTmux.send(value) dict " {{{
 endfunction " }}}
 
 function s:screenTmux.focus() dict " {{{
-  if !exists('g:ScreenShellWindow')
-    return
-  endif
-
-  let result = self.exec('list-windows')
-  if v:shell_error
-    return result
-  endif
-
-  let windows = filter(
-    \ split(result, "\n"),
-    \ 'v:val =~ "^\\s*\\d\\+:\\s\\+' . g:ScreenShellWindow . '"')
-  if len(windows)
-    let window = substitute(windows[0], '^\s*\(\d\+\):.*', '\1', '')
-    let result = self.exec('select-window -t:' . window)
-    if v:shell_error
-      return result
-    endif
-  endif
-
-  if !g:ScreenShellExternal
-    let panes = []
-    let result = self.exec('list-panes')
-    let panes = filter(
-      \ split(result, "\n"),
-      \ 'v:val =~ " ' . g:ScreenShellTmuxPane . '\\>"')
-    if len(panes)
-      let result = self.exec('select-pane -t ' . g:ScreenShellTmuxPane)
-    else
-      return 0
-    endif
-  endif
-  return result
+  return self.focusPane(g:ScreenShellTmuxPane)
 endfunction " }}}
 
 function s:screenTmux.quit() dict " {{{
@@ -1101,6 +1060,48 @@ function s:screenTmux.exec(cmd) dict " {{{
   endif
 
   return system(tmux . escape(cmd, ';'))
+endfunction " }}}
+
+function s:screenTmux.activePane() dict "{{{
+  " tmux 1.5: Unique %paneid for every pane
+  let line = self.exec('list-panes | grep "(active)$"')
+  let paneid = matchlist(line, '\v(\%\d+) \(active\)')
+  if empty(paneid)
+    return matchstr(line, '\v^\d+')
+  else
+    return paneid[1]
+  endif
+endfunction " }}}
+
+" s:screenTmux.focusPane() {{{
+" Focus a tmux pane. If a unique pane id is given (e.g. %1), will attempt to
+" select-window to the proper window before select-pane.
+function! s:screenTmux.focusPane(pane) dict
+  if !exists('g:ScreenShellWindow')
+    return
+  endif
+
+  " If this is a unique paneid, it may be in a different window
+  if a:pane =~# '\v^\%\d+$'
+    " tmux 1.5: list-{panes,windows} gain `-a` flag
+    let result = self.exec('list-panes -a | grep "' . a:pane . '\([^0-9]\|$\)"')
+    if v:shell_error | return result | endif
+
+    " `list-panes -a` returns session:window:pane
+    let winpos = matchlist(result, '\v^\d+:(\d+)')
+    if !empty(winpos)
+      " Checking to see if we're in the same window as the target pane would
+      " require a call to list-windows, so we just relax and forget about it.
+      let result = self.exec('select-window -t ' . winpos[1])
+      if v:shell_error | return result | endif
+    endif
+  endif
+
+  if !g:ScreenShellExternal
+    let result = self.exec('select-pane -t ' . a:pane)
+  endif
+
+  return result
 endfunction " }}}
 
 let s:screenConque = {}
