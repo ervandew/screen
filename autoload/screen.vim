@@ -94,7 +94,7 @@ function! screen#ScreenShell(cmd, ...) " {{{
       \ g:ScreenImpl =~ 'GnuScreen\|Tmux' &&
       \ !has('gui_running') &&
       \ !exists('g:ScreenShellBootstrapped') &&
-      \ !s:InScreenSession()
+      \ !s:screen{g:ScreenImpl}.inActiveSession()
 
     " if using an external shell without the need to set the vim servername,
     " then don't bootstrap
@@ -286,7 +286,7 @@ function! s:ScreenInit(cmd) " {{{
   if g:ScreenImpl =~ 'GnuScreen\|Tmux'
     " when already running in a screen session, never use an external shell
     let external = !exists('g:ScreenShellBootstrapped') &&
-      \ s:InScreenSession() ? 0 : g:ScreenShellExternal
+      \ s:screen{g:ScreenImpl}.inActiveSession() ? 0 : g:ScreenShellExternal
     " w/ gvim always use an external shell
     let external = has('gui_running') ? 1 : external
   endif
@@ -629,12 +629,6 @@ function! s:GetTerminal() " {{{
   return g:ScreenShellTerminal
 endfunction " }}}
 
-function! s:InScreenSession() " {{{
-  return
-    \ expand('$TERM') =~ '^screen' ||
-    \ (g:ScreenImpl == 'Tmux' && expand('$TMUX') !~ '^\(\$TMUX\|\)$')
-endfunction " }}}
-
 function! s:ValidTerminal(term) " {{{
   if a:term == ''
     return 0
@@ -728,6 +722,10 @@ function s:screenGnuScreen.isValid() dict " {{{
     return 0
   endif
   return 1
+endfunction " }}}
+
+function s:screenGnuScreen.inActiveSession() dict " {{{
+  return expand('$TERM') =~ '^screen'
 endfunction " }}}
 
 function s:screenGnuScreen.attachSession(session) dict " {{{
@@ -931,6 +929,10 @@ function s:screenTmux.isValid() dict " {{{
   endif
 
   return 1
+endfunction " }}}
+
+function s:screenTmux.inActiveSession() dict " {{{
+  return expand('$TMUX') !~ '^\(\$TMUX\|\)$'
 endfunction " }}}
 
 function s:screenTmux.activePane() dict "{{{
