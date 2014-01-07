@@ -358,17 +358,17 @@ globally available while the screen shell mode is enabled, allowing you to
 send your own strings to the attached shell.
 
 Here are some examples of using this funcref to send some commands to bash: >
-  :call ScreenShellSend("echo foo\necho bar")
-  :call ScreenShellSend('echo -e "foo\nbar"')
-  :call ScreenShellSend("echo -e \"foo\\nbar\"")
+  :call g:ScreenShellSend("echo foo\necho bar")
+  :call g:ScreenShellSend('echo -e "foo\nbar"')
+  :call g:ScreenShellSend("echo -e \"foo\\nbar\"")
 >
 
 Sending a list of strings is also supported: >
-  :call ScreenShellSend(["echo foo", "echo bar"])
+  :call g:ScreenShellSend(["echo foo", "echo bar"])
 >
 
 You can test that the funcref exists using: >
-   exists('ScreenShellSend')
+   exists('g:ScreenShellSend')
 >
 
 In addition to sending text to the screen shell, another funcref is available
@@ -376,7 +376,7 @@ allowing you to focus the shell region in screen.  Note: focusing an external
 screen shell is not supported.
 
 To focus the shell region from vim you can invoke the funcref like so: >
-  :call ScreenShellFocus()
+  :call g:ScreenShellFocus()
 >
 
 This will focus the bottom most region which is expected to be the one running
