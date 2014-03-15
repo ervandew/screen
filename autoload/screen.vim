@@ -1,7 +1,7 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 "
 " License: {{{
-"   Copyright (c) 2009 - 2013
+"   Copyright (c) 2009 - 2014
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -690,7 +690,7 @@ function! screen#IPython(...) " {{{
   let g:ScreenShellSendSuffix = '--'
   let g:ScreenShellSendVarsRestore = 1
 
-  exec 'ScreenShell' . bang . ' /usr/bin/ipython'
+  exec 'ScreenShell' . bang . ' ipython'
 endfunction " }}}
 
 function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) " {{{
