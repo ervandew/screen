@@ -132,6 +132,11 @@ set cpo&vim
     let g:ScreenShellSendSuffix = ''
   endif
 
+  " Check if user has requested iPython3, and if not, disable that option.
+  if !exists('g:ScreenIPython3')
+    let g:ScreenIPython3 = 0
+  endif
+
 " }}}
 
 " Autocmds {{{

@@ -161,6 +161,9 @@ Below is a comprehensive list of the commands which screen.vim provides:
   of setting |g:ScreenShellSendPrefix| and |g:ScreenShellSendSuffix| properly
   to handle ipython's auto indent support.
 
+  To use IPython3 instead of IPython2 by default, set g:ScreenIPython3 = 1 in
+  your .vimrc.
+
 :IPython!                        *screen-ipython-vertical* *:IPython!*
   Note: unavailable in gvim or if you are using gnu screen without
         |g:ScreenShellGnuScreenVerticalSupport| set.

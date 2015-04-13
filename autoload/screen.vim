@@ -690,7 +690,12 @@ function! screen#IPython(...) " {{{
   let g:ScreenShellSendSuffix = '--'
   let g:ScreenShellSendVarsRestore = 1
 
-  exec 'ScreenShell' . bang . ' ipython'
+  if g:ScreenIPython3 == 1
+    exec 'ScreenShell' . bang . ' ipython3'
+  else
+    exec 'ScreenShell' . bang . ' ipython'
+  endif
+
 endfunction " }}}
 
 function! screen#CommandCompleteScreenSessions(argLead, cmdLine, cursorPos) " {{{
