@@ -1,7 +1,7 @@
 " Author: Eric Van Dewoestine <ervandew@gmail.com>
 "
 " License: {{{
-"   Copyright (c) 2009 - 2014
+"   Copyright (c) 2009 - 2017
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -460,11 +460,12 @@ function! s:ScreenSend(...) " {{{
     let lines += split(g:ScreenShellSendSuffix, '\n')
   endif
 
-  let result = s:screen{g:ScreenImpl}.send(lines)
-
-  if v:shell_error
-    echoerr result
-  endif
+  for line in lines
+    let result = s:screen{g:ScreenImpl}.send(line)
+    if v:shell_error
+      echoerr result
+    endif
+  endfor
 endfunction " }}}
 
 function! s:ScreenFocus() " {{{
